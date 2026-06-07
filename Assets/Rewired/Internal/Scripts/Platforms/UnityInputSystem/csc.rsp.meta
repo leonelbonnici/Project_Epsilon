@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e11d310d4309d3f4cb73f853b9807421
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/csc.rsp
+  uploadId: 913162

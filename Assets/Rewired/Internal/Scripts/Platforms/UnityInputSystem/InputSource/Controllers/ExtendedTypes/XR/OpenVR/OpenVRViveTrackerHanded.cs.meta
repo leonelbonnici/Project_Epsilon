@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f24730e77349b9a47a21273bf19aa2d1
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/InputSource/Controllers/ExtendedTypes/XR/OpenVR/OpenVRViveTrackerHanded.cs
+  uploadId: 913162

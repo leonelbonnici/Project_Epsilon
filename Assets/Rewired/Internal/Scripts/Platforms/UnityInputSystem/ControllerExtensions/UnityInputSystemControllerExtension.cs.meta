@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 3dd86471671fb924a90e586656f64b4c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/ControllerExtensions/UnityInputSystemControllerExtension.cs
+  uploadId: 913162

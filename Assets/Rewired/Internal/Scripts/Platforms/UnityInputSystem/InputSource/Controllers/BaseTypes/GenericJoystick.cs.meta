@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e4e3ed458c66f494aaf35f7bae5c6743
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/InputSource/Controllers/BaseTypes/GenericJoystick.cs
+  uploadId: 913162

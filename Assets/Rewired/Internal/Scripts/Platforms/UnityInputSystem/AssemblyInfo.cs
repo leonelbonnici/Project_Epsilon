@@ -1,0 +1,5 @@
+﻿[assembly: System.Reflection.AssemblyTitle("Rewired Unity Input System")]
+[assembly: System.Reflection.AssemblyCompany("Guavaman Enterprises")]
+[assembly: System.Reflection.AssemblyProduct("Rewired")]
+[assembly: System.Reflection.AssemblyCopyright("Copyright © 2025 Augie R. Maddox. All rights reserved.")]
+[assembly: System.Reflection.AssemblyTrademark("Rewired")]

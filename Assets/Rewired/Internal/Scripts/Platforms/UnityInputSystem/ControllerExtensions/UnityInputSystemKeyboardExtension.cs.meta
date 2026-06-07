@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a5b54b3287f34d647b29f3f3689c5ce7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/ControllerExtensions/UnityInputSystemKeyboardExtension.cs
+  uploadId: 913162

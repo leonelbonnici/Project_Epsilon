@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9b17d148ffe733b4bb8fcd2b9d2ae0a9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/InputSource/Controllers/ExtendedTypes/XR/XRController.cs
+  uploadId: 913162

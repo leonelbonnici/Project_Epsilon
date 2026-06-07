@@ -1,0 +1,62 @@
+{
+    "name": "Rewired.UnityInputSystem",
+    "rootNamespace": "Rewired.Platforms.UnityInputSystem",
+    "references": [
+        "GUID:75469ad4d38634e559750d17036d5f7c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Rewired_Core.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ENABLE_INPUT_SYSTEM",
+        "!REWIRED_DISABLE_UNITY_INPUT_SYSTEM_SUPPORT"
+    ],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2021.2.0f1",
+            "define": "REWIRED_UNITY_INPUT_SYSTEM_SUPPORTED"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.7.0",
+            "define": "REWIRED_UNITY_INPUT_SYSTEM_INSTALLED"
+        },
+        {
+            "name": "com.unity.xr.oculus",
+            "expression": "1.0.3",
+            "define": "DISABLE_BUILTIN_INPUT_SYSTEM_OCULUS"
+        },
+        {
+            "name": "com.unity.xr.googlevr",
+            "expression": "1.0.0",
+            "define": "DISABLE_BUILTIN_INPUT_SYSTEM_GOOGLEVR"
+        },
+        {
+            "name": "com.unity.xr.openvr",
+            "expression": "1.0.0",
+            "define": "DISABLE_BUILTIN_INPUT_SYSTEM_OPENVR"
+        },
+        {
+            "name": "com.unity.xr.windowsmr",
+            "expression": "2.0.3",
+            "define": "DISABLE_BUILTIN_INPUT_SYSTEM_WINDOWSMR"
+        },
+        {
+            "name": "com.unity.modules.vr",
+            "expression": "1.0.0",
+            "define": "UNITY_INPUT_SYSTEM_ENABLE_VR"
+        },
+        {
+            "name": "com.unity.modules.xr",
+            "expression": "1.0.0",
+            "define": "UNITY_INPUT_SYSTEM_ENABLE_XR"
+        }
+    ],
+    "noEngineReferences": false
+}

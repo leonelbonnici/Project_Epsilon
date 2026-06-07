@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: e2bbb4b572d4af549bbd839fc4f25391
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Data/Controllers/HardwareMaps/Joysticks/GearVRController.asset
+  uploadId: 913162

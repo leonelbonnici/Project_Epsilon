@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d2e2edb1aa032e242a3e881e8d60bf02
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Scripts/Platforms/UnityInputSystem/InputSource/Controllers/BaseTypes/UnifiedKeyboard.cs
+  uploadId: 913162

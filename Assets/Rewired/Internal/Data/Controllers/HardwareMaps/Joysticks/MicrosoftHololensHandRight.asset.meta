@@ -1,0 +1,11 @@
+fileFormatVersion: 2
+guid: b4499f032e02395428a4d423832cc3d7
+NativeFormatImporter:
+  userData: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 21676
+  packageName: Rewired
+  packageVersion: 1.1.63.1
+  assetPath: Assets/Rewired/Internal/Data/Controllers/HardwareMaps/Joysticks/MicrosoftHololensHandRight.asset
+  uploadId: 913162
