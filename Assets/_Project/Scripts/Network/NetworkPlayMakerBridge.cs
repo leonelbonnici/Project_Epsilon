@@ -88,4 +88,12 @@ public class NetworkPlayMakerBridge : NetworkBehaviour
             fsm.SendEvent(eventName);
         }
     }
+
+    // Lets the SERVER (e.g., a boss attack) damage this player directly.
+    public void ServerApplyDamage(float amount)
+    {
+        if (!IsServer) return;
+        health.Value = Mathf.Max(0f, health.Value - amount);
+        HitEffectRpc();
+    }
 }

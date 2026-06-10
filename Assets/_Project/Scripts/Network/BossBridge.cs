@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using UnityEngine;
 using HutongGames.PlayMaker;
+using Unity.Collections;
 
 // Networking substrate for a boss: server-authoritative health + phase, a damage
 // entry point for player attacks, and PlayMaker events for presentation.
@@ -83,4 +84,14 @@ public class BossBridge : NetworkBehaviour
         PlayMakerFSM[] fsms = GetComponents<PlayMakerFSM>();
         foreach (PlayMakerFSM fsm in fsms) fsm.SendEvent(eventName);
     }
+
+    // Server-side brain calls this to fire a PlayMaker event on every client's copy.
+        public void ServerBroadcastEvent(string eventName)
+    {
+        if (IsServer) BroadcastEventRpc(eventName);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void BroadcastEventRpc(FixedString64Bytes eventName)
+        => SendEventToAllFsms(eventName.ToString());
 }
