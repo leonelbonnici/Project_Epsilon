@@ -44,6 +44,7 @@ public class BossBridge : NetworkBehaviour
     {
         if (health.Value <= 0f) return;                       // already dead
         health.Value = Mathf.Max(0f, health.Value - amount);
+        CheckPhase(); 
         if (health.Value <= 0f) Die();
     }
 
@@ -94,4 +95,16 @@ public class BossBridge : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void BroadcastEventRpc(FixedString64Bytes eventName)
         => SendEventToAllFsms(eventName.ToString());
+        
+    [UnityEngine.Tooltip("Health fraction (0-1) at which the boss enters its second phase.")]
+    public float phase2HealthFraction = 0.5f;
+
+    // The brain reads this each cycle — phase 2 is faster.
+    public float AttackCooldown => phase.Value >= 1 ? 1.0f : 2.0f;
+
+    private void CheckPhase()
+    {
+        if (phase.Value == 0 && health.Value <= maxHealth * phase2HealthFraction)
+            phase.Value = 1;   // server-write -> syncs + fires BOSS_PHASE_CHANGED on every client
+    }           
 }
