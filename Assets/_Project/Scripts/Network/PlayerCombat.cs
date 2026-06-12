@@ -40,8 +40,8 @@ public class PlayerCombat : NetworkBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, meleeRange);
         foreach (Collider2D hit in hits)
         {
-            BossBridge boss = hit.GetComponentInParent<BossBridge>();
-            if (boss != null) boss.ServerApplyDamage(meleeDamage);
+            IDamageable target = hit.GetComponentInParent<IDamageable>();
+            if (target != null && target.Team == Team.Enemy) target.ServerApplyDamage(meleeDamage);
         }
     }
 

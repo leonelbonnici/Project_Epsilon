@@ -2,8 +2,10 @@ using Unity.Netcode;
 using UnityEngine;
 using HutongGames.PlayMaker;
 
-public class NetworkPlayMakerBridge : NetworkBehaviour
+public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
 {
+    public Team Team => Team.Player;  
+
     [UnityEngine.Tooltip("Broadcast when this object spawns.")]
     public string SpawnEvent = "NETWORK_SPAWNED";
     [UnityEngine.Tooltip("Broadcast when this object despawns.")]

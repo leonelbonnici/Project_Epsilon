@@ -5,8 +5,10 @@ using Unity.Collections;
 
 // Networking substrate for a boss: server-authoritative health + phase, a damage
 // entry point for player attacks, and PlayMaker events for presentation.
-public class BossBridge : NetworkBehaviour
+public class BossBridge : NetworkBehaviour, IDamageable
 {
+    public Team Team => Team.Enemy;  
+
     [UnityEngine.Tooltip("Starting / max health.")]
     public float maxHealth = 500f;
 

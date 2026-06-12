@@ -1,8 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
 
-// Server-driven projectile. Reused for player shots (hit the boss) and boss shots
-// (hit players), controlled by hitsPlayers.
 [RequireComponent(typeof(NetworkObject))]
 public class Projectile : NetworkBehaviour
 {
@@ -12,15 +10,15 @@ public class Projectile : NetworkBehaviour
     private Vector2 direction = Vector2.up;
     private float speed = 12f;
     private float damage = 15f;
-    private bool hitsPlayers = false;
+    private Team targetTeam = Team.Enemy;
     private float spawnTime;
 
-    public void Configure(Vector2 dir, float spd, float dmg, bool hitsPlayers = false)
+    public void Configure(Vector2 dir, float spd, float dmg, Team targetTeam = Team.Enemy)
     {
         direction = dir.sqrMagnitude > 0.01f ? dir.normalized : Vector2.up;
         speed = spd;
         damage = dmg;
-        this.hitsPlayers = hitsPlayers;
+        this.targetTeam = targetTeam;
     }
 
     public override void OnNetworkSpawn() => spawnTime = Time.time;
@@ -35,16 +33,11 @@ public class Projectile : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!IsServer) return;
-
-        if (hitsPlayers)
+        IDamageable target = other.GetComponentInParent<IDamageable>();
+        if (target != null && target.Team == targetTeam)
         {
-            NetworkPlayMakerBridge player = other.GetComponentInParent<NetworkPlayMakerBridge>();
-            if (player != null) { player.ServerApplyDamage(damage); Despawn(); }
-        }
-        else
-        {
-            BossBridge boss = other.GetComponentInParent<BossBridge>();
-            if (boss != null) { boss.ServerApplyDamage(damage); Despawn(); }
+            target.ServerApplyDamage(damage);
+            Despawn();
         }
     }
 
