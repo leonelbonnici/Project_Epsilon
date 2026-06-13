@@ -4,8 +4,16 @@ using UnityEngine;
 
 // Server-authoritative arena: tracks encounter status, spawns the boss, and broadcasts
 // PlayMaker events to its FSMs for the encounter flow.
-public class ArenaBridge : NetworkBehaviour
+public class ArenaBridge : NetworkBehaviour, IRoom
 {
+    [UnityEngine.Tooltip("Unique identifier for this room within its area. Used by doors to declare prerequisites.")]
+    public string roomId = "arena_01";
+
+    // --- IRoom implementation ---
+    public string RoomId => roomId;
+    public bool IsCompleted => status.Value == (int)Status.Cleared;
+    public event System.Action<IRoom> RoomCompleted;
+
     public enum Status { Idle = 0, InProgress = 1, Cleared = 2, Failed = 3 }
 
     [UnityEngine.Tooltip("Boss prefab to spawn. Must be in the NetworkPrefabs list.")]
@@ -71,6 +79,7 @@ public class ArenaBridge : NetworkBehaviour
         if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
         status.Value = (int)Status.Cleared;
         BroadcastEventRpc(ClearedEvent);
+        RoomCompleted?.Invoke(this);
     }
 
     public override void OnNetworkSpawn()

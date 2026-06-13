@@ -61,3 +61,4 @@ MonoBehaviour:
   - DO_COMBO_SLAM
   - DO_COMBO
   - DO_COMBO_SHOOTER
+  - AREA_CLEARED
