@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Lingering hazard prefab to spawn for the area-denial attack.")]
+    public GameObject lingeringHazardPrefab;
+
     [UnityEngine.Tooltip("Bullet ring: number of projectiles fired in the radial volley.")]
     public int ringCount = 12;
     [UnityEngine.Tooltip("Bullet ring: starting rotation offset (degrees), useful for asymmetric variants.")]
@@ -182,5 +185,16 @@ public class BossAttacks : NetworkBehaviour
             Vector2 dir = new Vector2(Mathf.Cos(r), Mathf.Sin(r));
             SpawnBossProjectile(dir);
         }
+    }
+
+    public void ServerLingeringHazard()
+    {
+        if (!IsServer || lingeringHazardPrefab == null) return;
+        Transform target = GetNearestPlayer();
+        if (target == null) return;
+
+        Vector3 spawnPos = target.position;
+        GameObject obj = Instantiate(lingeringHazardPrefab, spawnPos, Quaternion.identity);
+        obj.GetComponent<NetworkObject>().Spawn();
     }
 }
