@@ -42,7 +42,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.size
-      value: 2
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[2].eventName
+      value: DO_SPREAD_SHOT
       objectReference: {fileID: 0}
     - target: {fileID: 4499783826451566910, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: m_LocalScale.x

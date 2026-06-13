@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Spread shot: number of projectiles per volley.")]
+    public int spreadCount = 3;
+    [UnityEngine.Tooltip("Spread shot: total fan angle in degrees (split evenly across the count).")]
+    public float spreadAngle = 30f;
+
     [UnityEngine.Tooltip("Dash distance (units). Boss travels this far toward the target.")]
     public float dashDistance = 6f;
     [UnityEngine.Tooltip("Dash duration in seconds.")]
@@ -42,11 +47,7 @@ public class BossAttacks : NetworkBehaviour
         if (target == null) return;
 
         Vector2 dir = ((Vector2)(target.position - transform.position)).normalized;
-        Vector3 spawnPos = transform.position + (Vector3)(dir * 0.8f);
-        GameObject obj = Instantiate(bossProjectilePrefab, spawnPos, Quaternion.identity);
-        Projectile p = obj.GetComponent<Projectile>();
-        if (p != null) p.Configure(dir, bossProjectileSpeed, bossProjectileDamage, Team.Player);
-        obj.GetComponent<NetworkObject>().Spawn();
+        SpawnBossProjectile(dir);
     }
 
     private Transform GetNearestPlayer()
@@ -111,5 +112,41 @@ public class BossAttacks : NetworkBehaviour
         }
 
         transform.position = endPos;
+    }
+
+    public void ServerSpreadShot()
+    {
+        if (!IsServer || bossProjectilePrefab == null) return;
+        Transform target = GetNearestPlayer();
+        if (target == null) return;
+
+        Vector2 baseDir = ((Vector2)(target.position - transform.position)).normalized;
+        float halfSpread = spreadAngle * 0.5f;
+        float step = spreadCount > 1 ? spreadAngle / (spreadCount - 1) : 0f;
+
+        for (int i = 0; i < spreadCount; i++)
+        {
+            float offsetDeg = -halfSpread + step * i;
+            Vector2 dir = Rotate(baseDir, offsetDeg);
+            SpawnBossProjectile(dir);
+        }
+    }
+
+    // Small helpers — extract the per-shot logic so future attacks reuse it.
+    private void SpawnBossProjectile(Vector2 dir)
+    {
+        Vector3 spawnPos = transform.position + (Vector3)(dir * 0.8f);
+        GameObject obj = Instantiate(bossProjectilePrefab, spawnPos, Quaternion.identity);
+        Projectile p = obj.GetComponent<Projectile>();
+        if (p != null) p.Configure(dir, bossProjectileSpeed, bossProjectileDamage, Team.Player);
+        obj.GetComponent<NetworkObject>().Spawn();
+    }
+
+    private static Vector2 Rotate(Vector2 v, float degrees)
+    {
+        float r = degrees * Mathf.Deg2Rad;
+        float c = Mathf.Cos(r);
+        float s = Mathf.Sin(r);
+        return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
     }
 }

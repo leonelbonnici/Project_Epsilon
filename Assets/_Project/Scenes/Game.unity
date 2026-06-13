@@ -847,7 +847,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaBridge
   ShowTopMostFoldoutHeaderGroup: 1
-  bossPrefab: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+  bossPrefab: {fileID: 7470997076836206496, guid: 7ebeddfa2f29edf428b9d6d715062e67, type: 3}
   bossSpawnPoint: {fileID: 0}
   SpawnEvent: ARENA_SPAWNED
   StartedEvent: ARENA_STARTED
@@ -1531,23 +1531,14 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 639
-        y: 166.97656
-        width: 131.98999
-        height: 32
+        x: 645
+        y: 163.97656
+        width: 100
+        height: 16
       isBreakpoint: 0
       isSequence: 0
       hideUnused: 0
-      transitions:
-      - fsmEvent:
-          name: ARENA_CLEARED
-          isSystemEvent: 0
-          isGlobal: 1
-        toState: Cleared
-        linkStyle: 0
-        linkConstraint: 0
-        linkTarget: 0
-        colorIndex: 0
+      transitions: []
       actionData:
         actionNames: []
         customNames: []

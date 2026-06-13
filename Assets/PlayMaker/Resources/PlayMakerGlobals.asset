@@ -51,3 +51,4 @@ MonoBehaviour:
   - ARENA_STARTED
   - ARENA_BOSS_SPAWNED
   - DO_DASH
+  - DO_SPREAD_SHOT
