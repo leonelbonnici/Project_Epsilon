@@ -42,11 +42,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.size
-      value: 5
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[4].weight
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[5].weight
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[3].minPhase
@@ -63,6 +67,14 @@ PrefabInstance:
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[4].eventName
       value: DO_PULL
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[5].eventName
+      value: DO_COMBO_SHOOTER
+      objectReference: {fileID: 0}
+    - target: {fileID: 3402487520033339388, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4499783826451566910, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: m_LocalScale.x
