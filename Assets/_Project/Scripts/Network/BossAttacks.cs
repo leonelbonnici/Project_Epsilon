@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Bullet ring: number of projectiles fired in the radial volley.")]
+    public int ringCount = 12;
+    [UnityEngine.Tooltip("Bullet ring: starting rotation offset (degrees), useful for asymmetric variants.")]
+    public float ringStartAngle = 0f;
+
     [UnityEngine.Tooltip("Hazard prefab to spawn for the targeted-hazard attack.")]
     public GameObject hazardPrefab;
 
@@ -163,5 +168,19 @@ public class BossAttacks : NetworkBehaviour
         Vector3 spawnPos = target.position;
         GameObject obj = Instantiate(hazardPrefab, spawnPos, Quaternion.identity);
         obj.GetComponent<NetworkObject>().Spawn();
+    }
+
+    public void ServerBulletRing()
+    {
+        if (!IsServer || bossProjectilePrefab == null) return;
+
+        float step = ringCount > 0 ? 360f / ringCount : 360f;
+        for (int i = 0; i < ringCount; i++)
+        {
+            float angleDeg = ringStartAngle + step * i;
+            float r = angleDeg * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(r), Mathf.Sin(r));
+            SpawnBossProjectile(dir);
+        }
     }
 }

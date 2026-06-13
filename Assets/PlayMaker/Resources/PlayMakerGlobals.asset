@@ -53,3 +53,4 @@ MonoBehaviour:
   - DO_DASH
   - DO_SPREAD_SHOT
   - DO_HAZARD
+  - DO_BULLET_RING
