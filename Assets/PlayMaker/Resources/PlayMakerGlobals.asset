@@ -40,3 +40,6 @@ MonoBehaviour:
   events:
   - NETWORK_SPAWNED
   - HIT_EFFECT
+  - ATTACK_DONE
+  - DO_SLAM
+  - DO_SHOT
