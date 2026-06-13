@@ -52,6 +52,11 @@ public class ArenaBridge : NetworkBehaviour
 
         GameObject obj = Instantiate(bossPrefab, pos, Quaternion.identity);
         spawnedBoss = obj.GetComponent<BossBridge>();
+
+        // Scale HP by player count BEFORE spawning — BossBridge.OnNetworkSpawn reads maxHealth on the server.
+        int playerCount = NetworkManager.Singleton.ConnectedClientsList.Count;
+        if (spawnedBoss != null) spawnedBoss.maxHealth *= Mathf.Max(1, playerCount);
+
         obj.GetComponent<NetworkObject>().Spawn();
 
         // Cross-object glue: arena listens for the boss's death and turns it into ARENA_CLEARED.
