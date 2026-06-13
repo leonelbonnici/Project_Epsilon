@@ -847,7 +847,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaBridge
   ShowTopMostFoldoutHeaderGroup: 1
-  bossPrefab: {fileID: 7470997076836206496, guid: 7ebeddfa2f29edf428b9d6d715062e67, type: 3}
+  bossPrefab: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
   bossSpawnPoint: {fileID: 0}
   SpawnEvent: ARENA_SPAWNED
   StartedEvent: ARENA_STARTED

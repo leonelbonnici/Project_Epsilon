@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Hazard prefab to spawn for the targeted-hazard attack.")]
+    public GameObject hazardPrefab;
+
     [UnityEngine.Tooltip("Spread shot: number of projectiles per volley.")]
     public int spreadCount = 3;
     [UnityEngine.Tooltip("Spread shot: total fan angle in degrees (split evenly across the count).")]
@@ -148,5 +151,17 @@ public class BossAttacks : NetworkBehaviour
         float c = Mathf.Cos(r);
         float s = Mathf.Sin(r);
         return new Vector2(v.x * c - v.y * s, v.x * s + v.y * c);
+    }
+
+    public void ServerHazard()
+    {
+        if (!IsServer || hazardPrefab == null) return;
+        Transform target = GetNearestPlayer();
+        if (target == null) return;
+
+        // Spawn the hazard at the target's CURRENT position. They have ~1.2s (telegraph) to vacate.
+        Vector3 spawnPos = target.position;
+        GameObject obj = Instantiate(hazardPrefab, spawnPos, Quaternion.identity);
+        obj.GetComponent<NetworkObject>().Spawn();
     }
 }

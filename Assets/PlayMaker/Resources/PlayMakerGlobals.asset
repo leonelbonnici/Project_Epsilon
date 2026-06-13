@@ -52,3 +52,4 @@ MonoBehaviour:
   - ARENA_BOSS_SPAWNED
   - DO_DASH
   - DO_SPREAD_SHOT
+  - DO_HAZARD
