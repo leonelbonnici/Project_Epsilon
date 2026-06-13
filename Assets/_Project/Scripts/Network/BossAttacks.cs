@@ -3,6 +3,15 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Dash distance (units). Boss travels this far toward the target.")]
+    public float dashDistance = 6f;
+    [UnityEngine.Tooltip("Dash duration in seconds.")]
+    public float dashDuration = 0.4f;
+    [UnityEngine.Tooltip("Dash damage to players caught in the path.")]
+    public float dashDamage = 25f;
+    [UnityEngine.Tooltip("Dash hit radius (how wide the boss's collision is during dash).")]
+    public float dashRadius = 1.2f;
+
     [UnityEngine.Tooltip("Slam radius around the boss.")]
     public float slamRadius = 3f;
     [UnityEngine.Tooltip("Slam damage to players caught in range.")]
@@ -59,5 +68,48 @@ public class BossAttacks : NetworkBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, slamRadius);
+    }
+
+    // Telegraphed lunge toward the nearest player. Damages anyone the boss passes through.
+    public void ServerDash()
+    {
+        if (!IsServer) return;
+        Transform target = GetNearestPlayer();
+        if (target == null) return;
+
+        Vector2 direction = ((Vector2)(target.position - transform.position)).normalized;
+        Vector3 startPos = transform.position;
+        Vector3 endPos = startPos + (Vector3)(direction * dashDistance);
+
+        StartCoroutine(DashRoutine(startPos, endPos));
+    }
+
+    private System.Collections.IEnumerator DashRoutine(Vector3 startPos, Vector3 endPos)
+    {
+        float elapsed = 0f;
+        var hitPlayers = new System.Collections.Generic.HashSet<IDamageable>();
+
+        while (elapsed < dashDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / dashDuration);
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+
+            // Overlap check at the boss's current position — damage each player at most once per dash.
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, dashRadius);
+            foreach (Collider2D hit in hits)
+            {
+                IDamageable target = hit.GetComponentInParent<IDamageable>();
+                if (target != null && target.Team == Team.Player && !hitPlayers.Contains(target))
+                {
+                    target.ServerApplyDamage(dashDamage);
+                    hitPlayers.Add(target);
+                }
+            }
+
+            yield return null;
+        }
+
+        transform.position = endPos;
     }
 }

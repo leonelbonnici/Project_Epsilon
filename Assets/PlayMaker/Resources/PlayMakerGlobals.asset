@@ -50,3 +50,4 @@ MonoBehaviour:
   - AREA_STARTED
   - ARENA_STARTED
   - ARENA_BOSS_SPAWNED
+  - DO_DASH
