@@ -42,7 +42,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.size
-      value: 4
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[4].weight
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[3].minPhase
@@ -55,6 +59,10 @@ PrefabInstance:
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[3].eventName
       value: DO_BULLET_RING
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[4].eventName
+      value: DO_PULL
       objectReference: {fileID: 0}
     - target: {fileID: 4499783826451566910, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: m_LocalScale.x

@@ -3,6 +3,11 @@ using UnityEngine;
 
 public class BossAttacks : NetworkBehaviour
 {
+    [UnityEngine.Tooltip("Pull/push: how far each player is moved.")]
+    public float pullPushDistance = 4f;
+    [UnityEngine.Tooltip("Pull/push: how long the movement takes.")]
+    public float pullPushDuration = 0.35f;
+
     [UnityEngine.Tooltip("Lingering hazard prefab to spawn for the area-denial attack.")]
     public GameObject lingeringHazardPrefab;
 
@@ -196,5 +201,31 @@ public class BossAttacks : NetworkBehaviour
         Vector3 spawnPos = target.position;
         GameObject obj = Instantiate(lingeringHazardPrefab, spawnPos, Quaternion.identity);
         obj.GetComponent<NetworkObject>().Spawn();
+    }
+
+    public void ServerPullPlayers()
+    {
+        if (!IsServer) return;
+        ApplyImpulseToAllPlayers(toward: true);
+    }
+
+    public void ServerPushPlayers()
+    {
+        if (!IsServer) return;
+        ApplyImpulseToAllPlayers(toward: false);
+    }
+
+    private void ApplyImpulseToAllPlayers(bool toward)
+    {
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (client.PlayerObject == null) continue;
+            var bridge = client.PlayerObject.GetComponent<NetworkPlayMakerBridge>();
+            if (bridge == null) continue;
+
+            Vector2 dir = ((Vector2)(client.PlayerObject.transform.position - transform.position)).normalized;
+            if (toward) dir = -dir;       // flip: pull means toward boss
+            bridge.ServerApplyImpulse(dir, pullPushDistance, pullPushDuration);
+        }
     }
 }

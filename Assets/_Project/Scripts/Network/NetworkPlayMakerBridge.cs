@@ -98,4 +98,33 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
         health.Value = Mathf.Max(0f, health.Value - amount);
         HitEffectRpc();
     }
+
+    // Server-side hook for boss attacks that displace the player (pull, push, knockback, etc).
+    public void ServerApplyImpulse(Vector2 direction, float distance, float duration)
+    {
+        if (!IsServer) return;
+        ApplyImpulseRpc(direction, distance, duration);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void ApplyImpulseRpc(Vector2 direction, float distance, float duration)
+    {
+        StartCoroutine(ImpulseRoutine(direction, distance, duration));
+    }
+
+    private System.Collections.IEnumerator ImpulseRoutine(Vector2 direction, float distance, float duration)
+    {
+        if (duration <= 0f) yield break;
+        Vector3 start = transform.position;
+        Vector3 end = start + (Vector3)(direction.normalized * distance);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            transform.position = Vector3.Lerp(start, end, t);
+            yield return null;
+        }
+        transform.position = end;
+    }
 }
