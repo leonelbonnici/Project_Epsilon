@@ -7,6 +7,9 @@ using Unity.Collections;
 // entry point for player attacks, and PlayMaker events for presentation.
 public class BossBridge : NetworkBehaviour, IDamageable
 {
+    // Server-side hook: fires when this boss dies. Used by the arena to detect a clear.
+    public event System.Action DiedRaised;
+
     public Team Team => Team.Enemy;  
 
     [UnityEngine.Tooltip("Starting / max health.")]
@@ -55,8 +58,9 @@ public class BossBridge : NetworkBehaviour, IDamageable
 
     private void Die()
     {
-        DiedRpc();                                            // let every copy react first
-        if (NetworkObject.IsSpawned) NetworkObject.Despawn(); // then remove it everywhere
+        if (IsServer) DiedRaised?.Invoke();   // <-- add this line first
+        DiedRpc();
+        if (NetworkObject.IsSpawned) NetworkObject.Despawn();
     }
 
     [Rpc(SendTo.ClientsAndHost)]
