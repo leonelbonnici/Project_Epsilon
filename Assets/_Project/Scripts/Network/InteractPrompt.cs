@@ -66,7 +66,9 @@ public class InteractPrompt : MonoBehaviour
         var sw = GetComponent<PuzzleSwitch>();
         if (sw != null && !sw.toggleable) return !sw.IsActive;
 
-        // NPCs will be added here when we build step 4b.
+        var npc = GetComponent<NpcInteractable>();
+        if (npc != null) return npc.IsAvailable;
+
         return true;
     }
 
