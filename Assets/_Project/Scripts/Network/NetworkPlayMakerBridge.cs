@@ -127,4 +127,33 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
         }
         transform.position = end;
     }
+
+    public void ServerTeleportPlayer(Vector3 position)
+    {
+        if (!IsServer) return;
+        TeleportRpc(position);
+    }
+
+    [Rpc(SendTo.Owner)]
+    private void TeleportRpc(Vector3 position)
+    {
+        // Use NetworkTransform.Teleport so observers SNAP to the new position
+        // instead of interpolating smoothly through the world.
+        var nt = GetComponent<Unity.Netcode.Components.NetworkTransform>();
+        if (nt != null)
+        {
+            nt.Teleport(position, transform.rotation, transform.localScale);
+        }
+        else
+        {
+            transform.position = position;
+        }
+
+        // Stop any residual velocity so the player doesn't drift after teleporting.
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+    }
 }
