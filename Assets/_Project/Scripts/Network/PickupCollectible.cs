@@ -4,8 +4,23 @@ using UnityEngine;
 // Server-authoritative pickup. Collected state lives in a NetworkVariable so all clients
 // see the same state without anything getting destroyed. Same pattern as Door.isLocked.
 [RequireComponent(typeof(NetworkObject))]
-public class PickupCollectible : NetworkBehaviour, IInteractable
+public class PickupCollectible : NetworkBehaviour, IInteractable, IPersistable
 {
+    // --- IPersistable ---
+    public string PersistenceId => $"pickup:{pickupId}";
+
+    public string CaptureState()
+    {
+        return isCollected.Value ? "1" : "0";
+    }
+
+    public void RestoreState(string state)
+    {
+        bool wasCollected = state == "1";
+        isCollected.Value = wasCollected;
+        ApplyCollectedState(wasCollected);
+    }
+
     [UnityEngine.Tooltip("Unique identifier for this pickup within its room.")]
     public string pickupId = "pickup_01";
 

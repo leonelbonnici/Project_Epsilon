@@ -120,6 +120,12 @@ public class SceneFlowController : MonoBehaviour
             return;
         }
 
+        // Snapshot the current area's state before it gets unloaded
+        if (AreaStateManager.Instance != null)
+        {
+            AreaStateManager.Instance.SnapshotArea(currentGameplayScene);
+        }
+
         var status = NetworkManager.Singleton.SceneManager.UnloadScene(current);
         if (status != SceneEventProgressStatus.Started)
         {
@@ -162,6 +168,12 @@ public class SceneFlowController : MonoBehaviour
             currentGameplayScene = sceneEvent.SceneName;
             state = TransitionState.Idle;
             TeleportPlayersToSpawn(pendingSpawnPointName);
+
+            // Restore any previously-snapshotted state for this area
+            if (AreaStateManager.Instance != null)
+            {
+                AreaStateManager.Instance.RestoreArea(sceneEvent.SceneName);
+            }
         }
 
         if (sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted)
