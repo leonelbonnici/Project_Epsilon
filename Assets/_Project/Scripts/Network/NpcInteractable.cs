@@ -10,8 +10,21 @@ using PixelCrushers.DialogueSystem;
 //   5. On conversation end, client RPCs back to server "done"
 //   6. Server flips isCompleted (if oneTime) and clears the in-conversation lock
 [RequireComponent(typeof(NetworkObject))]
-public class NpcInteractable : NetworkBehaviour, IInteractable
+public class NpcInteractable : NetworkBehaviour, IInteractable, IPersistable
 {
+    // --- IPersistable ---
+    public string PersistenceId => $"npc:{npcId}";
+
+    public string CaptureState() => isCompleted.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        bool completed = state == "1";
+        isCompleted.Value = completed;
+        if (completedVisual != null) completedVisual.SetActive(completed);
+        if (normalVisual != null) normalVisual.SetActive(!completed);
+    }
+
     [UnityEngine.Tooltip("Unique identifier within the area.")]
     public string npcId = "npc_01";
 

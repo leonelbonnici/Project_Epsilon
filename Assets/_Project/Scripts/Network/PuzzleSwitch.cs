@@ -4,8 +4,21 @@ using UnityEngine;
 // A switch the player interacts with via key press. Toggles between off/on states.
 // Each switch's state is server-authoritative; clients react to the NetworkVariable.
 [RequireComponent(typeof(NetworkObject))]
-public class PuzzleSwitch : NetworkBehaviour, IInteractable
-{
+public class PuzzleSwitch : NetworkBehaviour, IInteractable, IPersistable{
+
+    // --- IPersistable ---
+    public string PersistenceId => $"switch:{switchId}";
+
+    public string CaptureState() => isActive.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        bool active = state == "1";
+        isActive.Value = active;
+        if (activeVisual != null) activeVisual.SetActive(active);
+        if (inactiveVisual != null) inactiveVisual.SetActive(!active);
+    }
+
     [UnityEngine.Tooltip("Unique identifier for this switch within its puzzle room.")]
     public string switchId = "switch_01";
 

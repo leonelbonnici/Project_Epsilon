@@ -79,4 +79,37 @@ public class AreaBridge : NetworkBehaviour
         if (string.IsNullOrEmpty(eventName)) return;
         foreach (var fsm in GetComponents<PlayMakerFSM>()) fsm.SendEvent(eventName);
     }
+
+    /// <summary>
+    /// Server-only: re-evaluate all doors in this area based on current room states.
+    /// Called by AreaStateManager after restoring state, since restored room completion
+    /// doesn't fire RoomCompleted events that doors normally listen to.
+    /// </summary>
+    public void ServerEvaluateAllDoors()
+    {
+        if (!IsServer) return;
+
+        var myScene = gameObject.scene;
+        var rooms = new Dictionary<string, IRoom>();
+
+        var roots = myScene.GetRootGameObjects();
+        foreach (var root in roots)
+        {
+            foreach (var comp in root.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (comp is IRoom room && !string.IsNullOrEmpty(room.RoomId))
+                {
+                    rooms[room.RoomId] = room;
+                }
+            }
+        }
+
+        foreach (var root in roots)
+        {
+            foreach (var door in root.GetComponentsInChildren<Door>(true))
+            {
+                door.ServerEvaluate(rooms);
+            }
+        }
+    }
 }

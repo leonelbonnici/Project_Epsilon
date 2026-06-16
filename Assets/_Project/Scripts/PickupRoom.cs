@@ -4,8 +4,18 @@ using UnityEngine;
 
 // IRoom that completes when all required pickup IDs in this room are collected.
 // Configure with one or many — the logic is the same.
-public class PickupRoom : NetworkBehaviour, IRoom
+public class PickupRoom : NetworkBehaviour, IRoom, IPersistable
 {
+    // --- IPersistable ---
+    public string PersistenceId => $"room:{RoomId}";
+
+    public string CaptureState() => isCompleted.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        isCompleted.Value = state == "1";
+    }
+
     [UnityEngine.Tooltip("Unique identifier within the area.")]
     public string roomId = "pickup_room_01";
 

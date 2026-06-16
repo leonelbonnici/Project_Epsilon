@@ -4,8 +4,21 @@ using UnityEngine;
 
 // Server-authoritative arena: tracks encounter status, spawns the boss, and broadcasts
 // PlayMaker events to its FSMs for the encounter flow.
-public class ArenaBridge : NetworkBehaviour, IRoom
+public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
 {
+    // --- IPersistable ---
+    public string PersistenceId => $"arena:{roomId}";
+
+    public string CaptureState() => status.Value == (int)Status.Cleared ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        // Only the "Cleared" state is meaningful to persist. Anything else
+        // (InProgress, Failed) resets to Idle so the player can re-attempt.
+        bool wasCleared = state == "1";
+        status.Value = wasCleared ? (int)Status.Cleared : (int)Status.Idle;
+    }
+
     [UnityEngine.Tooltip("Unique identifier for this room within its area. Used by doors to declare prerequisites.")]
     public string roomId = "arena_01";
 

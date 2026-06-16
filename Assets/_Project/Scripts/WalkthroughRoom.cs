@@ -5,8 +5,19 @@ using UnityEngine;
 // Use as a placeholder for filler rooms, lore stops, narrative beats — anything
 // that just needs the player to "be there" to count as cleared.
 [RequireComponent(typeof(NetworkObject))]
-public class WalkthroughRoom : NetworkBehaviour, IRoom
+public class WalkthroughRoom : NetworkBehaviour, IRoom, IPersistable
 {
+
+    // --- IPersistable ---
+    public string PersistenceId => $"room:{RoomId}";
+
+    public string CaptureState() => isCompleted.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        isCompleted.Value = state == "1";
+    }
+
     [UnityEngine.Tooltip("Unique identifier within the area.")]
     public string roomId = "walkthrough_01";
 

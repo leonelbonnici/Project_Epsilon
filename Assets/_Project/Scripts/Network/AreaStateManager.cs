@@ -64,6 +64,17 @@ public class AreaStateManager : MonoBehaviour
             }
         }
         Debug.Log($"[AreaStateManager] Restored {restored} objects in '{areaName}'.");
+
+        // Trigger door re-evaluation since restored room states didn't fire RoomCompleted events
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            var ab = root.GetComponentInChildren<AreaBridge>(true);
+            if (ab != null)
+            {
+                ab.ServerEvaluateAllDoors();
+                break;
+            }
+        }
     }
 
     private List<IPersistable> FindPersistablesInScene(Scene scene)

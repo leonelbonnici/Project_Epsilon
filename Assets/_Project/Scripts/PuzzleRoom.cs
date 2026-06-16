@@ -6,8 +6,18 @@ using UnityEngine;
 //   - Pattern mode: requirements list specifies a per-switch state (any order).
 //   - Sequence mode: requiredSequence specifies an ORDER of switch activations.
 // If requiredSequence has any entries, sequence mode is used and requirements is ignored.
-public class PuzzleRoom : NetworkBehaviour, IRoom
+public class PuzzleRoom : NetworkBehaviour, IRoom, IPersistable
 {
+    // --- IPersistable ---
+    public string PersistenceId => $"room:{RoomId}";
+
+    public string CaptureState() => isCompleted.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        isCompleted.Value = state == "1";
+    }
+
     [System.Serializable]
     public class SwitchRequirement
     {

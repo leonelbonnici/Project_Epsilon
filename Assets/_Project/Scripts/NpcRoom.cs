@@ -4,8 +4,19 @@ using UnityEngine;
 
 // IRoom that completes when each required NPC has been talked to.
 // Same shape as PickupRoom and PuzzleRoom — different interactable type, same pattern.
-public class NpcRoom : NetworkBehaviour, IRoom
+public class NpcRoom : NetworkBehaviour, IRoom, IPersistable
 {
+
+    // --- IPersistable ---
+    public string PersistenceId => $"room:{RoomId}";
+
+    public string CaptureState() => isCompleted.Value ? "1" : "0";
+
+    public void RestoreState(string state)
+    {
+        isCompleted.Value = state == "1";
+    }
+
     [UnityEngine.Tooltip("Unique identifier within the area.")]
     public string roomId = "npc_room_01";
 
