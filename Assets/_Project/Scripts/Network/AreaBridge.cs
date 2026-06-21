@@ -16,7 +16,15 @@ public class AreaBridge : NetworkBehaviour
 
     private Dictionary<string, IRoom> rooms = new Dictionary<string, IRoom>();
     private List<Door> doors = new List<Door>();
-    private bool areaCleared = false;
+
+    // Tracks whether AREA_CLEARED has been broadcast once — separate from "is the area cleared right now".
+    // We need this because IsAreaCleared is derived from room states (works on restore), but the event
+    // should only fire once per session when the area first becomes cleared.
+    private bool areaClearedEventFired = false;
+
+    // Public derived property: returns true if all required rooms are currently completed.
+    // Used by external components like EndAreaAltar to query current state, including after IPersistable restore.
+    public bool IsAreaCleared => AllRequiredRoomsCleared();
 
     public override void OnNetworkSpawn()
     {
@@ -56,10 +64,10 @@ public class AreaBridge : NetworkBehaviour
         // Re-evaluate every door's unlock condition.
         foreach (var door in doors) door.ServerEvaluate(rooms);
 
-        // Check if the area itself is now complete.
-        if (!areaCleared && AllRequiredRoomsCleared())
+        // Fire AREA_CLEARED exactly once when the area first becomes cleared.
+        if (!areaClearedEventFired && IsAreaCleared)
         {
-            areaCleared = true;
+            areaClearedEventFired = true;
             BroadcastEventRpc(ClearedEvent);
         }
     }

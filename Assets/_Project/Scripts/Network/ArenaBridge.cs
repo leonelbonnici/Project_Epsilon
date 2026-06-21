@@ -6,6 +6,9 @@ using UnityEngine;
 // PlayMaker events to its FSMs for the encounter flow.
 public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
 {
+    [UnityEngine.Tooltip("Altar that drops at the boss's death position. Replaces the old cleared marker. Optional — leave null if this arena doesn't have one.")]
+    public EndAreaAltar dropAltar;
+
     // --- IPersistable ---
     public string PersistenceId => $"arena:{roomId}";
 
@@ -89,7 +92,19 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
     private void OnBossDied()
     {
         if (!IsServer) return;
+
+        // Capture the boss's death position BEFORE unsubscribing / despawn happens.
+        Vector3 deathPos = spawnedBoss != null ? spawnedBoss.transform.position : transform.position;
+
         if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
+
+        // Drop the altar at the boss's death location FIRST, so it's positioned correctly
+        // before any visual reactions fire on listeners.
+        if (dropAltar != null)
+        {
+            dropAltar.ServerDropAtPosition(deathPos);
+        }
+
         status.Value = (int)Status.Cleared;
         BroadcastEventRpc(ClearedEvent);
         RoomCompleted?.Invoke(this);
