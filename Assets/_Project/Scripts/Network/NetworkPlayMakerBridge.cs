@@ -4,6 +4,9 @@ using HutongGames.PlayMaker;
 
 public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
 {
+    [UnityEngine.Tooltip("Starting / max health.")]
+    public float maxHealth = 100f;
+
     public Team Team => Team.Player;  
 
     [UnityEngine.Tooltip("Broadcast when this object spawns.")]
@@ -54,7 +57,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
     [Rpc(SendTo.Server)]
     private void HealRpc(float amount)
     {
-        health.Value = Mathf.Min(100f, health.Value + amount);
+        health.Value = Mathf.Min(maxHealth, health.Value + amount);
     }
 
     // --- Runs on ALL clients + host (server -> clients) ---
@@ -89,6 +92,18 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
         {
             fsm.SendEvent(eventName);
         }
+    }
+
+    public void ServerHealFull()
+    {
+        if (!IsServer) return;
+        health.Value = maxHealth;
+    }
+
+    public void ServerHeal(float amount)
+    {
+        if (!IsServer) return;
+        health.Value = Mathf.Min(maxHealth, health.Value + amount);
     }
 
     // Lets the SERVER (e.g., a boss attack) damage this player directly.
