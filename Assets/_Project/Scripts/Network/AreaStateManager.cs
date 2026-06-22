@@ -7,7 +7,9 @@ public class AreaStateManager : MonoBehaviour
 {
     public static AreaStateManager Instance { get; private set; }
 
-    private readonly Dictionary<string, Dictionary<string, string>> areaStates
+    private const string SAVE_KEY = "AreaStateManager.AreaStates";
+
+    private Dictionary<string, Dictionary<string, string>> areaStates
         = new Dictionary<string, Dictionary<string, string>>();
 
     private void Awake()
@@ -15,8 +17,14 @@ public class AreaStateManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        LoadFromDisk();
     }
 
+    /// <summary>
+    /// Server-only: walks the given scene's objects, captures state from all IPersistables,
+    /// stores under the area name. Replaces any prior snapshot for that area.
+    /// </summary>
     public void SnapshotArea(string areaName)
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
@@ -38,8 +46,14 @@ public class AreaStateManager : MonoBehaviour
 
         areaStates[areaName] = snapshot;
         Debug.Log($"[AreaStateManager] Snapshotted {snapshot.Count} objects in '{areaName}'.");
+
+        SaveToDisk();
     }
 
+    /// <summary>
+    /// Server-only: walks the given scene's objects, restores state on any IPersistable
+    /// whose ID matches a prior snapshot. Silently no-ops if no snapshot exists.
+    /// </summary>
     public void RestoreArea(string areaName)
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer) return;
@@ -77,6 +91,55 @@ public class AreaStateManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Wipes all in-memory and on-disk area state. Useful for "new game" buttons and dev testing.
+    /// </summary>
+    public void ClearAllSavedState()
+    {
+        areaStates.Clear();
+        try
+        {
+            if (ES3.KeyExists(SAVE_KEY)) ES3.DeleteKey(SAVE_KEY);
+            Debug.Log("[AreaStateManager] Cleared all in-memory and on-disk state.");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AreaStateManager] Failed to clear save data: {e.Message}");
+        }
+    }
+
+    private void SaveToDisk()
+    {
+        try
+        {
+            ES3.Save(SAVE_KEY, areaStates);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AreaStateManager] Failed to save to disk: {e.Message}");
+        }
+    }
+
+    private void LoadFromDisk()
+    {
+        try
+        {
+            if (!ES3.KeyExists(SAVE_KEY)) return;
+
+            var loaded = ES3.Load<Dictionary<string, Dictionary<string, string>>>(SAVE_KEY);
+            if (loaded != null)
+            {
+                areaStates = loaded;
+                Debug.Log($"[AreaStateManager] Loaded state for {areaStates.Count} area(s) from disk.");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AreaStateManager] Failed to load from disk: {e.Message}");
+            areaStates = new Dictionary<string, Dictionary<string, string>>();
+        }
+    }
+
     private List<IPersistable> FindPersistablesInScene(Scene scene)
     {
         var list = new List<IPersistable>();
@@ -91,4 +154,27 @@ public class AreaStateManager : MonoBehaviour
         }
         return list;
     }
+
+#if UNITY_EDITOR
+    [UnityEditor.MenuItem("Tools/AreaState/Clear Save Data")]
+    private static void EditorClearSaveData()
+    {
+        try
+        {
+            if (ES3.KeyExists(SAVE_KEY))
+            {
+                ES3.DeleteKey(SAVE_KEY);
+                Debug.Log("[AreaStateManager] Cleared save data via editor menu.");
+            }
+            else
+            {
+                Debug.Log("[AreaStateManager] No save data found.");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AreaStateManager] Failed to clear save data: {e.Message}");
+        }
+    }
+#endif
 }
