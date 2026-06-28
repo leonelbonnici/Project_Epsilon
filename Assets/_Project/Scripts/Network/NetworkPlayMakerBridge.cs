@@ -28,6 +28,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
     public bool IsLocalOwner => IsOwner;
     public int OwnerId => (int)OwnerClientId;
     public float HealthValue => health.Value;
+    public float HealthNormalized => maxHealth > 0f ? health.Value / maxHealth : 0f;
 
     // --- PlayMaker entry points (called on the owning client) ---
     // The IsOwner guard ensures only the owned copy sends the request,

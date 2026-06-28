@@ -70,7 +70,10 @@ public class InteractPrompt : MonoBehaviour
         if (npc != null) return npc.IsAvailable;
 
         var portal = GetComponent<ScenePortal>();
-        if (portal != null) return portal.IsArmed;       // <-- new: only prompt when armed
+        if (portal != null) return portal.IsArmed;
+
+        var altar = GetComponent<EndAreaAltar>();
+        if (altar != null) return altar.IsAvailable;
 
         return true;
     }
