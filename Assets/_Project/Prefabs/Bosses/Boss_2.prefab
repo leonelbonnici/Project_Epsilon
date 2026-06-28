@@ -133,6 +133,10 @@ PrefabInstance:
       value: 250
       objectReference: {fileID: 0}
     - target: {fileID: 6624181416121213562, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: displayName
+      value: Gabriel the Engulfer
+      objectReference: {fileID: 0}
+    - target: {fileID: 6624181416121213562, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: phase2HealthFraction
       value: 0.75
       objectReference: {fileID: 0}

@@ -7,6 +7,9 @@ using Unity.Collections;
 // entry point for player attacks, and PlayMaker events for presentation.
 public class BossBridge : NetworkBehaviour, IDamageable
 {
+    [UnityEngine.Tooltip("Name shown on the boss health bar (e.g., 'The Slammer'). Falls back to GameObject name if empty.")]
+    public string displayName = "";
+
     // Server-side hook: fires when this boss dies. Used by the arena to detect a clear.
     public event System.Action DiedRaised;
 
@@ -28,10 +31,15 @@ public class BossBridge : NetworkBehaviour, IDamageable
         0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<int> phase = new NetworkVariable<int>(
         0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    // Synced effective max health (after player-count scaling). Server writes once on spawn.
+    private NetworkVariable<float> effectiveMaxHealth = new NetworkVariable<float>(
+        0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+public float MaxHealthValue => effectiveMaxHealth.Value > 0f ? effectiveMaxHealth.Value : maxHealth;
 
     // Reads for PlayMaker Get Property.
     public float HealthValue => health.Value;
-    public float HealthNormalized => maxHealth > 0f ? health.Value / maxHealth : 0f;  // 0..1, handy for a health bar
+    public float HealthNormalized => MaxHealthValue > 0f ? health.Value / MaxHealthValue : 0f;
     public int PhaseValue => phase.Value;
     public bool IsServerBrain => IsServer;   // the brain FSM (step 3) will gate on this
 
@@ -69,11 +77,15 @@ public class BossBridge : NetworkBehaviour, IDamageable
     // --- Lifecycle ---
     public override void OnNetworkSpawn()
     {
-        if (IsServer) health.Value = maxHealth;               // server sets starting health
+        if (IsServer)
+        {
+            effectiveMaxHealth.Value = maxHealth;
+            health.Value = maxHealth;
+        }
         health.OnValueChanged += HandleHealthChanged;
         phase.OnValueChanged += HandlePhaseChanged;
         SendEventToAllFsms(SpawnEvent);
-        SendEventToAllFsms(HealthChangedEvent);               // show starting health
+        SendEventToAllFsms(HealthChangedEvent);
     }
 
     public override void OnNetworkDespawn()
@@ -110,7 +122,7 @@ public class BossBridge : NetworkBehaviour, IDamageable
 
     private void CheckPhase()
     {
-        if (phase.Value == 0 && health.Value <= maxHealth * phase2HealthFraction)
-            phase.Value = 1;   // server-write -> syncs + fires BOSS_PHASE_CHANGED on every client
-    }           
+        if (phase.Value == 0 && health.Value <= MaxHealthValue * phase2HealthFraction)
+            phase.Value = 1;
+    }          
 }
