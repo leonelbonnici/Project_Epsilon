@@ -32,6 +32,7 @@ GameObject:
   - component: {fileID: 7069178638400512864}
   - component: {fileID: 3402487520033339388}
   - component: {fileID: 6841851248506113585}
+  - component: {fileID: 4417388112524866487}
   m_Layer: 0
   m_Name: Boss_Base
   m_TagString: Untagged
@@ -4749,3 +4750,20 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 11400000, guid: fdee631aff6cc544d9c94d2eff031e21, type: 2}
   eventHandlerComponentsAdded: 1
+--- !u!114 &4417388112524866487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7682195235354225034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fdaab64884e4042bd15b001b82c5b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
+  targetSprites: []
+  overrideNormalColor: 1
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
+  flashColor: {r: 1, g: 0, b: 0.86571336, a: 1}
+  flashDuration: 0.1

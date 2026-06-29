@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 2182572508651135246}
   - component: {fileID: 6633878059265544845}
   - component: {fileID: 1258260474649464660}
+  - component: {fileID: 4044290593676309556}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -4180,3 +4181,21 @@ MonoBehaviour:
     handleAnimatorIK: 0
   fsmTemplate: {fileID: 0}
   eventHandlerComponentsAdded: 0
+--- !u!114 &4044290593676309556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510562584070272353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45fdaab64884e4042bd15b001b82c5b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
+  targetSprites:
+  - {fileID: 2045117128598433761}
+  overrideNormalColor: 1
+  normalColor: {r: 1, g: 1, b: 1, a: 0}
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  flashDuration: 0.1

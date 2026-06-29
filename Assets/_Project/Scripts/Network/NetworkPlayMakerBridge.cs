@@ -7,6 +7,9 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
     [UnityEngine.Tooltip("Starting / max health.")]
     public float maxHealth = 100f;
 
+    // Fires on every client when health changes. Signature: (previousValue, currentValue).
+    public event System.Action<float, float> HealthChanged;
+
     public Team Team => Team.Player;  
 
     [UnityEngine.Tooltip("Broadcast when this object spawns.")]
@@ -83,6 +86,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
     private void HandleHealthChanged(float previousValue, float newValue)
     {
         SendEventToAllFsms(HealthChangedEvent);
+        HealthChanged?.Invoke(previousValue, newValue);
     }
 
     private void SendEventToAllFsms(string eventName)

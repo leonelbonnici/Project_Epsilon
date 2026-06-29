@@ -10,6 +10,9 @@ public class BossBridge : NetworkBehaviour, IDamageable
     [UnityEngine.Tooltip("Name shown on the boss health bar (e.g., 'The Slammer'). Falls back to GameObject name if empty.")]
     public string displayName = "";
 
+    // Fires on every client when boss health changes. Signature: (previousValue, currentValue).
+    public event System.Action<float, float> HealthChanged;
+
     // Server-side hook: fires when this boss dies. Used by the arena to detect a clear.
     public event System.Action DiedRaised;
 
@@ -94,7 +97,12 @@ public float MaxHealthValue => effectiveMaxHealth.Value > 0f ? effectiveMaxHealt
         phase.OnValueChanged -= HandlePhaseChanged;
     }
 
-    private void HandleHealthChanged(float prev, float curr) => SendEventToAllFsms(HealthChangedEvent);
+    private void HandleHealthChanged(float prev, float curr)
+    {
+        SendEventToAllFsms(HealthChangedEvent);
+        HealthChanged?.Invoke(prev, curr);
+    }
+
     private void HandlePhaseChanged(int prev, int curr) => SendEventToAllFsms(PhaseChangedEvent);
 
     private void SendEventToAllFsms(string eventName)
