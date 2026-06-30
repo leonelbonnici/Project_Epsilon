@@ -45,6 +45,36 @@ public class BossAttacks : NetworkBehaviour
     [UnityEngine.Tooltip("Boss projectile damage.")]
     public float bossProjectileDamage = 15f;
 
+    // --- Target validity helper ---
+    // Single chokepoint for "is this an enemy I should be hitting/targeting?"
+    // Filters out: dead/null targets, non-player team, and downed players.
+    private static bool IsValidTarget(IDamageable target)
+    {
+        if (target == null || target.Team != Team.Player) return false;
+        var bridge = target as NetworkPlayMakerBridge;
+        if (bridge != null && bridge.IsDowned) return false;
+        return true;
+    }
+
+    // Finds the nearest alive (non-downed) player. Returns null if none.
+    private Transform GetNearestPlayer()
+    {
+        Transform nearest = null;
+        float best = float.MaxValue;
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            NetworkObject po = client.PlayerObject;
+            if (po == null) continue;
+
+            var bridge = po.GetComponent<NetworkPlayMakerBridge>();
+            if (bridge != null && bridge.IsDowned) continue;
+
+            float d = ((Vector2)(po.transform.position - transform.position)).sqrMagnitude;
+            if (d < best) { best = d; nearest = po.transform; }
+        }
+        return nearest;
+    }
+
     public void ServerSlam()
     {
         if (!IsServer) return;
@@ -52,7 +82,7 @@ public class BossAttacks : NetworkBehaviour
         foreach (Collider2D hit in hits)
         {
             IDamageable target = hit.GetComponentInParent<IDamageable>();
-            if (target != null && target.Team == Team.Player) target.ServerApplyDamage(slamDamage);
+            if (IsValidTarget(target)) target.ServerApplyDamage(slamDamage);
         }
     }
 
@@ -66,28 +96,12 @@ public class BossAttacks : NetworkBehaviour
         SpawnBossProjectile(dir);
     }
 
-    private Transform GetNearestPlayer()
-    {
-        Transform nearest = null;
-        float best = float.MaxValue;
-        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
-        {
-            NetworkObject po = client.PlayerObject;
-            if (po == null) continue;
-            float d = ((Vector2)(po.transform.position - transform.position)).sqrMagnitude;
-            if (d < best) { best = d; nearest = po.transform; }
-        }
-        return nearest;
-    }
-
-    // Tier 1 gizmo: see the slam radius in the Scene view when the boss is selected.
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, slamRadius);
     }
 
-    // Telegraphed lunge toward the nearest player. Damages anyone the boss passes through.
     public void ServerDash()
     {
         if (!IsServer) return;
@@ -112,12 +126,11 @@ public class BossAttacks : NetworkBehaviour
             float t = Mathf.Clamp01(elapsed / dashDuration);
             transform.position = Vector3.Lerp(startPos, endPos, t);
 
-            // Overlap check at the boss's current position — damage each player at most once per dash.
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, dashRadius);
             foreach (Collider2D hit in hits)
             {
                 IDamageable target = hit.GetComponentInParent<IDamageable>();
-                if (target != null && target.Team == Team.Player && !hitPlayers.Contains(target))
+                if (IsValidTarget(target) && !hitPlayers.Contains(target))
                 {
                     target.ServerApplyDamage(dashDamage);
                     hitPlayers.Add(target);
@@ -148,7 +161,6 @@ public class BossAttacks : NetworkBehaviour
         }
     }
 
-    // Small helpers — extract the per-shot logic so future attacks reuse it.
     private void SpawnBossProjectile(Vector2 dir)
     {
         Vector3 spawnPos = transform.position + (Vector3)(dir * 0.8f);
@@ -172,7 +184,6 @@ public class BossAttacks : NetworkBehaviour
         Transform target = GetNearestPlayer();
         if (target == null) return;
 
-        // Spawn the hazard at the target's CURRENT position. They have ~1.2s (telegraph) to vacate.
         Vector3 spawnPos = target.position;
         GameObject obj = Instantiate(hazardPrefab, spawnPos, Quaternion.identity);
         obj.GetComponent<NetworkObject>().Spawn();
@@ -222,9 +233,10 @@ public class BossAttacks : NetworkBehaviour
             if (client.PlayerObject == null) continue;
             var bridge = client.PlayerObject.GetComponent<NetworkPlayMakerBridge>();
             if (bridge == null) continue;
+            if (bridge.IsDowned) continue;
 
             Vector2 dir = ((Vector2)(client.PlayerObject.transform.position - transform.position)).normalized;
-            if (toward) dir = -dir;       // flip: pull means toward boss
+            if (toward) dir = -dir;
             bridge.ServerApplyImpulse(dir, pullPushDistance, pullPushDuration);
         }
     }

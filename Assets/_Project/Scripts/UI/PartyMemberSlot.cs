@@ -34,8 +34,16 @@ public class PartyMemberSlot : MonoBehaviour
     {
         if (bridge == null || fillImage == null) return;
 
-        float frac = bridge.HealthNormalized;
-        fillImage.fillAmount = frac;
-        fillImage.color = frac <= lowHealthThreshold ? lowColor : normalColor;
+        if (bridge.IsDowned)
+        {
+            fillImage.fillAmount = 0f;
+            fillImage.color = Color.grey;
+        }
+        else
+        {
+            float frac = bridge.HealthNormalized;
+            fillImage.fillAmount = frac;
+            fillImage.color = frac <= lowHealthThreshold ? lowColor : normalColor;
+        }
     }
 }

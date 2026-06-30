@@ -133,6 +133,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
     public void ServerApplyImpulse(Vector2 direction, float distance, float duration)
     {
         if (!IsServer) return;
+        if (isDowned.Value) return; // downed players are anchored — boss effects don't move them
         ApplyImpulseRpc(direction, distance, duration);
     }
 
@@ -164,7 +165,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
         StartCoroutine(ImpulseRoutine(direction, distance, duration));
     }
 
-    private System.Collections.IEnumerator ImpulseRoutine(Vector2 direction, float distance, float duration)
+        private System.Collections.IEnumerator ImpulseRoutine(Vector2 direction, float distance, float duration)
     {
         if (duration <= 0f) yield break;
         Vector3 start = transform.position;
@@ -172,6 +173,7 @@ public class NetworkPlayMakerBridge : NetworkBehaviour, IDamageable
         float elapsed = 0f;
         while (elapsed < duration)
         {
+            if (isDowned.Value) yield break; // interrupt — downed player stays where they fell
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             transform.position = Vector3.Lerp(start, end, t);

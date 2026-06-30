@@ -44,7 +44,8 @@ public class DamageFlash : MonoBehaviour
 
     private void OnHealthChanged(float prev, float curr)
     {
-        if (curr < prev) Flash();
+        // Skip flash on the killing blow — downed visual takes over instead.
+        if (curr < prev && curr > 0f) Flash();
     }
 
     public void Flash()

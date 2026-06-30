@@ -26,6 +26,8 @@ GameObject:
   - component: {fileID: 6633878059265544845}
   - component: {fileID: 1258260474649464660}
   - component: {fileID: 4044290593676309556}
+  - component: {fileID: 2547272737435993018}
+  - component: {fileID: 9147133899515492378}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -196,6 +198,13 @@ MonoBehaviour:
   DespawnEvent: NETWORK_DESPAWNED
   HealthChangedEvent: HEALTH_CHANGED
   HitEffectEvent: HIT_EFFECT
+  DownedEvent: PLAYER_DOWNED
+  RevivedEvent: PLAYER_REVIVED
+  isDowned:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
 --- !u!114 &7078285966754084152
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4195,7 +4204,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageFlash
   targetSprites:
   - {fileID: 2045117128598433761}
-  overrideNormalColor: 1
-  normalColor: {r: 1, g: 1, b: 1, a: 0}
   flashColor: {r: 1, g: 1, b: 1, a: 1}
   flashDuration: 0.1
+--- !u!114 &2547272737435993018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510562584070272353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af3e97b0f91292445bda27d046f69f61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DownedTint
+  targetSprites: []
+  downedColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+--- !u!114 &9147133899515492378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510562584070272353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7412615f11ef58e4082c72ccf2e23c3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DownedStateController
+  fsmNamesToDisable:
+  - Player Movement
+  - PlayerCombat
+  - PlayerInteract
+  - RangedFire
+  componentsToDisable:
+  - {fileID: 6633878059265544845}
+  zeroVelocityOnDown: 1
