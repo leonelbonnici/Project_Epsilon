@@ -69,11 +69,11 @@ public class InteractPrompt : MonoBehaviour
         var npc = GetComponent<NpcInteractable>();
         if (npc != null) return npc.IsAvailable;
 
-        var portal = GetComponent<ScenePortal>();
-        if (portal != null) return portal.IsArmed;
-
         var altar = GetComponent<EndAreaAltar>();
         if (altar != null) return altar.IsAvailable;
+
+        var zone = GetComponent<ReadyZone>();
+        if (zone != null) return zone.IsAvailable;
 
         return true;
     }

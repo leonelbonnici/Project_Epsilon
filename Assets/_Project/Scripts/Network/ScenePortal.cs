@@ -5,7 +5,7 @@ using UnityEngine;
 // Portal interactable that gates transitions on all players being present.
 // A trigger collider detects players in the "ready zone"; when all are in, the portal is armed.
 [RequireComponent(typeof(NetworkObject))]
-public class ScenePortal : NetworkBehaviour, IInteractable
+public class ScenePortal : NetworkBehaviour
 {
     [UnityEngine.Tooltip("Scene to transition to (must be in Build Settings).")]
     public string targetSceneName = "";
@@ -52,7 +52,8 @@ public class ScenePortal : NetworkBehaviour, IInteractable
         isArmed.Value = !requireAllPlayersInTrigger || (playersInTrigger.Count >= TotalPlayers);
     }
 
-    public void ServerOnInteract(NetworkPlayMakerBridge interactor)
+    // Called by ReadyZone.onAllReady (and reused internally below).
+    public void ServerInitiateTransition()
     {
         if (!IsServer) return;
         if (SceneFlowController.Instance == null)
@@ -61,12 +62,6 @@ public class ScenePortal : NetworkBehaviour, IInteractable
             return;
         }
         if (string.IsNullOrEmpty(targetSceneName)) return;
-        if (requireAllPlayersInTrigger && !isArmed.Value)
-        {
-            Debug.Log($"[ScenePortal] Not all players ready ({readyCount.Value}/{TotalPlayers}).");
-            return;
-        }
-
         SceneFlowController.Instance.ServerTransitionToScene(targetSceneName, targetSpawnPointName);
     }
 }
