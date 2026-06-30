@@ -30,6 +30,7 @@ public class DownedStateController : MonoBehaviour
 
     private void OnDownedChanged(bool isDowned)
     {
+        Debug.Log($"[DownedStateController] {gameObject.name} OnDownedChanged({isDowned})");
         SetGateActive(!isDowned);
 
         var rb = GetComponent<Rigidbody2D>();
@@ -47,8 +48,9 @@ public class DownedStateController : MonoBehaviour
         }
     }
 
-    private void SetGateActive(bool active)
+        private void SetGateActive(bool active)
     {
+        int affected = 0;
         if (fsmNamesToDisable != null)
         {
             foreach (var fsm in GetComponents<PlayMakerFSM>())
@@ -58,6 +60,9 @@ public class DownedStateController : MonoBehaviour
                     if (fsm.FsmName == name)
                     {
                         fsm.enabled = active;
+                        // On revive, also send a PLAYER_REVIVED event so the FSM can hard-reset its state.
+                        if (active) fsm.SendEvent("PLAYER_REVIVED");
+                        affected++;
                         break;
                     }
                 }

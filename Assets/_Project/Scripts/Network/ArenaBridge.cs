@@ -6,6 +6,10 @@ using UnityEngine;
 // PlayMaker events to its FSMs for the encounter flow.
 public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
 {
+    [UnityEngine.Tooltip("Health fraction (0-1) restored to downed players when the boss dies. Set to 0 to disable auto-revive for this arena.")]
+    [Range(0f, 1f)]
+    public float reviveOnBossDeathFraction = 0.25f;
+
     [UnityEngine.Tooltip("Altar that drops at the boss's death position. Replaces the old cleared marker. Optional — leave null if this arena doesn't have one.")]
     public EndAreaAltar dropAltar;
 
@@ -93,13 +97,9 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
     {
         if (!IsServer) return;
 
-        // Capture the boss's death position BEFORE unsubscribing / despawn happens.
         Vector3 deathPos = spawnedBoss != null ? spawnedBoss.transform.position : transform.position;
-
         if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
 
-        // Drop the altar at the boss's death location FIRST, so it's positioned correctly
-        // before any visual reactions fire on listeners.
         if (dropAltar != null)
         {
             dropAltar.ServerDropAtPosition(deathPos);
@@ -108,6 +108,26 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
         status.Value = (int)Status.Cleared;
         BroadcastEventRpc(ClearedEvent);
         RoomCompleted?.Invoke(this);
+
+        // Auto-revive any downed players at the configured HP fraction.
+        ReviveDownedPlayers();
+    }
+
+    private void ReviveDownedPlayers()
+    {
+        if (!IsServer) return;
+        if (reviveOnBossDeathFraction <= 0f) return;
+
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (client.PlayerObject == null) continue;
+            var bridge = client.PlayerObject.GetComponent<NetworkPlayMakerBridge>();
+            if (bridge == null) continue;
+            if (!bridge.IsDowned) continue;
+
+            float reviveHP = bridge.maxHealth * reviveOnBossDeathFraction;
+            bridge.ServerRevive(reviveHP);
+        }
     }
 
     public override void OnNetworkSpawn()

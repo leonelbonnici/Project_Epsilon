@@ -228,8 +228,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 50
-        y: 164
+        x: 274
+        y: 196
         width: 155.98999
         height: 32
       isBreakpoint: 0
@@ -289,8 +289,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 276
-        y: 175
+        x: 500
+        y: 207
         width: 130.25
         height: 48
       isBreakpoint: 0
@@ -509,9 +509,9 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 831
-        y: 69
-        width: 100
+        x: 1055
+        y: 101
+        width: 147.59
         height: 16
       isBreakpoint: 0
       isSequence: 0
@@ -767,8 +767,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 834
-        y: 208.00781
+        x: 1058
+        y: 240.00781
         width: 100
         height: 16
       isBreakpoint: 0
@@ -819,8 +819,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 649
-        y: 66
+        x: 873
+        y: 98
         width: 124.15
         height: 32
       isBreakpoint: 0
@@ -995,8 +995,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 472
-        y: 65.984375
+        x: 696
+        y: 97.984375
         width: 135.95
         height: 32
       isBreakpoint: 0
@@ -1297,7 +1297,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: PLAYER_REVIVED
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: PLAYER_REVIVED
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Active
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables:
       - useVariable: 1
@@ -2923,7 +2935,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 50
+        x: 258
         y: 100
         width: 155.98999
         height: 32
@@ -2984,9 +2996,9 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 83
-        y: 168
-        width: 100
+        x: 52.8125
+        y: 165.33594
+        width: 133.57
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -3089,8 +3101,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 81
-        y: 240
+        x: 63.96875
+        y: 253.14062
         width: 100
         height: 32
       isBreakpoint: 0
@@ -3201,7 +3213,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: PLAYER_REVIVED
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: PLAYER_REVIVED
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Polling
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables: []
       intVariables: []
@@ -3297,7 +3321,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 50
+        x: 258
         y: 100
         width: 155.98999
         height: 32
@@ -3358,9 +3382,9 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 84
-        y: 173
-        width: 100
+        x: 64
+        y: 187
+        width: 147.59
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -3463,8 +3487,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 86
-        y: 242
+        x: 82
+        y: 266.01562
         width: 100
         height: 32
       isBreakpoint: 0
@@ -3575,7 +3599,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: PLAYER_REVIVED
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: PLAYER_REVIVED
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Polling
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables: []
       intVariables: []
@@ -3748,7 +3784,7 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 50
+        x: 258
         y: 100
         width: 155.98999
         height: 32
@@ -3809,9 +3845,9 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 78
-        y: 171
-        width: 113.45
+        x: 59
+        y: 180
+        width: 147.59
         height: 32
       isBreakpoint: 0
       isSequence: 0
@@ -3914,8 +3950,8 @@ MonoBehaviour:
       colorIndex: 0
       position:
         serializedVersion: 2
-        x: 85
-        y: 240
+        x: 72
+        y: 265.02344
         width: 100
         height: 32
       isBreakpoint: 0
@@ -4117,7 +4153,19 @@ MonoBehaviour:
     - name: FINISHED
       isSystemEvent: 1
       isGlobal: 0
-    globalTransitions: []
+    - name: PLAYER_REVIVED
+      isSystemEvent: 0
+      isGlobal: 1
+    globalTransitions:
+    - fsmEvent:
+        name: PLAYER_REVIVED
+        isSystemEvent: 0
+        isGlobal: 1
+      toState: Polling
+      linkStyle: 0
+      linkConstraint: 0
+      linkTarget: 0
+      colorIndex: 0
     variables:
       floatVariables: []
       intVariables: []
