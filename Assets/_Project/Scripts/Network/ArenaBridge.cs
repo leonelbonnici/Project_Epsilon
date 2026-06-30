@@ -6,6 +6,27 @@ using UnityEngine;
 // PlayMaker events to its FSMs for the encounter flow.
 public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
 {
+    [Header("Party wipe")]
+
+    [UnityEngine.Tooltip("HP fraction (0-1) given to revived players after a party wipe. 1 = full HP. Keep > 0, otherwise they arrive in the hub still downed and unable to interact.")]
+    [Range(0f, 1f)]
+    public float reviveOnWipeFraction = 0.5f;
+    private bool wipeTriggered = false;
+    private readonly List<NetworkPlayMakerBridge> subscribedBridges = new();
+
+    [UnityEngine.Tooltip("Fired to FSMs when a party wipe begins. Hook this for cutscene/effect/sound (screen flash, fade-to-black, camera shake, defeat jingle, etc).")]
+    public string WipedEvent = "ARENA_WIPED";
+
+    [UnityEngine.Tooltip("Seconds to wait after a party wipe before transitioning to the hub. Gives the WIPED-event cutscene time to play out.")]
+    [Range(0f, 10f)]
+    public float wipeToHubDelay = 2f;
+
+    [UnityEngine.Tooltip("Scene name to send players to after a party wipe.")]
+    public string wipeReturnScene = "Hub";
+
+    [UnityEngine.Tooltip("Spawn point name in the wipe-return scene.")]
+    public string wipeReturnSpawnPoint = "PlayerSpawn_HubArrival";
+
     [UnityEngine.Tooltip("Health fraction (0-1) restored to downed players when the boss dies. Set to 0 to disable auto-revive for this arena.")]
     [Range(0f, 1f)]
     public float reviveOnBossDeathFraction = 0.25f;
@@ -71,6 +92,8 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
         status.Value = (int)Status.InProgress;
         SpawnBoss();
         BroadcastEventRpc(StartedEvent);
+        wipeTriggered = false;
+        SubscribeToPartyDowned();
     }
 
     private void SpawnBoss()
@@ -96,6 +119,7 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
     private void OnBossDied()
     {
         if (!IsServer) return;
+        UnsubscribeFromPartyDowned();
 
         Vector3 deathPos = spawnedBoss != null ? spawnedBoss.transform.position : transform.position;
         if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
@@ -115,8 +139,14 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
 
     private void ReviveDownedPlayers()
     {
+        // Boss-death revive — preserves the existing 3c behaviour.
+        ReviveAllDownedPlayers(reviveOnBossDeathFraction);
+    }
+
+    private void ReviveAllDownedPlayers(float hpFraction)
+    {
         if (!IsServer) return;
-        if (reviveOnBossDeathFraction <= 0f) return;
+        if (hpFraction <= 0f) return;
 
         foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
         {
@@ -125,8 +155,103 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
             if (bridge == null) continue;
             if (!bridge.IsDowned) continue;
 
-            float reviveHP = bridge.maxHealth * reviveOnBossDeathFraction;
+            float reviveHP = bridge.maxHealth * hpFraction;
             bridge.ServerRevive(reviveHP);
+        }
+    }
+
+    private void SubscribeToPartyDowned()
+    {
+        UnsubscribeFromPartyDowned(); // safety against double-subscribe on weird re-entries
+
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (client.PlayerObject == null) continue;
+            var bridge = client.PlayerObject.GetComponent<NetworkPlayMakerBridge>();
+            if (bridge == null) continue;
+
+            bridge.DownedChanged += OnPlayerDownedChanged;
+            subscribedBridges.Add(bridge);
+        }
+    }
+
+    private void UnsubscribeFromPartyDowned()
+    {
+        foreach (var bridge in subscribedBridges)
+        {
+            if (bridge != null) bridge.DownedChanged -= OnPlayerDownedChanged;
+        }
+        subscribedBridges.Clear();
+    }
+
+    private void OnPlayerDownedChanged(bool nowDowned)
+    {
+        if (!IsServer) return;
+        if (!nowDowned) return;                              // ignore "got revived" transitions
+        if (wipeTriggered) return;                           // idempotent — fire once per encounter
+        if (status.Value != (int)Status.InProgress) return;  // ignore stale callbacks during teardown
+
+        if (AreAllConnectedPlayersDowned())
+        {
+            wipeTriggered = true;
+            TriggerPartyWipe();
+        }
+    }
+
+    private bool AreAllConnectedPlayersDowned()
+    {
+        int considered = 0;
+        int downed = 0;
+
+        foreach (var client in NetworkManager.Singleton.ConnectedClientsList)
+        {
+            if (client.PlayerObject == null) continue;
+            var bridge = client.PlayerObject.GetComponent<NetworkPlayMakerBridge>();
+            if (bridge == null) continue;
+
+            considered++;
+            if (bridge.IsDowned) downed++;
+        }
+
+        return considered > 0 && downed == considered;
+    }
+
+    private void TriggerPartyWipe()
+    {
+        if (!IsServer) return;
+
+        // Stop listening before we mutate anything else.
+        UnsubscribeFromPartyDowned();
+
+        // Detach from the live boss before the scene unload destroys it.
+        if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
+
+        // Notify FSMs so any cutscene/effect can start now.
+        BroadcastEventRpc(WipedEvent);
+
+        // Defer the rest of the wipe until after the cutscene window.
+        StartCoroutine(CompleteWipeAfterDelay());
+    }
+
+    private System.Collections.IEnumerator CompleteWipeAfterDelay()
+    {
+        if (wipeToHubDelay > 0f) yield return new WaitForSeconds(wipeToHubDelay);
+
+        // Revive everyone so they're playable in the hub.
+        // (Done AFTER the delay so players stay visually downed during the "defeat" moment.)
+        ReviveAllDownedPlayers(reviveOnWipeFraction);
+
+        // Only THIS arena resets. IPersistable.CaptureState only persists 'Cleared',
+        // so Idle is the live default again on re-entry — boss respawns fresh.
+        status.Value = (int)Status.Idle;
+
+        if (SceneFlowController.Instance != null)
+        {
+            SceneFlowController.Instance.ServerTransitionToScene(wipeReturnScene, wipeReturnSpawnPoint);
+        }
+        else
+        {
+            Debug.LogError("[ArenaBridge] SceneFlowController not found; party wipe cannot complete the hub transition.");
         }
     }
 
@@ -140,6 +265,7 @@ public class ArenaBridge : NetworkBehaviour, IRoom, IPersistable
     {
         status.OnValueChanged -= HandleStatusChanged;
         if (spawnedBoss != null) spawnedBoss.DiedRaised -= OnBossDied;
+        UnsubscribeFromPartyDowned();
     }
 
     private void HandleStatusChanged(int prev, int curr) { /* reserved for later UI hooks */ }
