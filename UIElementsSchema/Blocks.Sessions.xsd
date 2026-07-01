@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="Blocks.Sessions" elementFormDefault="qualified" targetNamespace="Blocks.Sessions" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="UnityEngine.UIElements.xsd" namespace="UnityEngine.UIElements" />
+  <xs:complexType name="SessionBrowserElementType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q1="UnityEngine.UIElements" base="q1:ListViewType">
+        <xs:choice />
+        <xs:attribute name="session-settings" type="xs:string" />
+        <xs:attribute default="20" name="max-sessions-displayed" type="xs:int" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="SessionBrowserElement" xmlns:q2="UnityEngine.UIElements" substitutionGroup="q2:ListView" type="tns:SessionBrowserElementType" />
+  <xs:complexType name="JoinSessionByCodeType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q3="UnityEngine.UIElements" base="q3:VisualElementType">
+        <xs:choice />
+        <xs:attribute name="session-settings" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="JoinSessionByCode" xmlns:q4="UnityEngine.UIElements" substitutionGroup="q4:VisualElement" type="tns:JoinSessionByCodeType" />
+  <xs:complexType name="QuickJoinButtonType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q5="UnityEngine.UIElements" base="q5:ButtonType">
+        <xs:choice />
+        <xs:attribute name="session-settings" type="xs:string" />
+        <xs:attribute name="quick-join-settings" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="QuickJoinButton" xmlns:q6="UnityEngine.UIElements" substitutionGroup="q6:Button" type="tns:QuickJoinButtonType" />
+  <xs:complexType name="CreateSessionElementType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q7="UnityEngine.UIElements" base="q7:VisualElementType">
+        <xs:choice />
+        <xs:attribute name="session-settings" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="CreateSessionElement" xmlns:q8="UnityEngine.UIElements" substitutionGroup="q8:VisualElement" type="tns:CreateSessionElementType" />
+</xs:schema>

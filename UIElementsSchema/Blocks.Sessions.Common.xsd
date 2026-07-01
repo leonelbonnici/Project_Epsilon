@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="Blocks.Sessions.Common" elementFormDefault="qualified" targetNamespace="Blocks.Sessions.Common" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="UnityEngine.UIElements.xsd" namespace="UnityEngine.UIElements" />
+  <xs:complexType name="SessionInfoElementType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q1="UnityEngine.UIElements" base="q1:VisualElementType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="SessionInfoElement" xmlns:q2="UnityEngine.UIElements" substitutionGroup="q2:VisualElement" type="tns:SessionInfoElementType" />
+  <xs:complexType name="SessionStatusLabelType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q3="UnityEngine.UIElements" base="q3:LabelType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="SessionStatusLabel" xmlns:q4="UnityEngine.UIElements" substitutionGroup="q4:Label" type="tns:SessionStatusLabelType" />
+  <xs:complexType name="PlayerNameLabelType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q5="UnityEngine.UIElements" base="q5:LabelType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="PlayerNameLabel" xmlns:q6="UnityEngine.UIElements" substitutionGroup="q6:Label" type="tns:PlayerNameLabelType" />
+  <xs:complexType name="SessionNameLabelType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q7="UnityEngine.UIElements" base="q7:LabelType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="SessionNameLabel" xmlns:q8="UnityEngine.UIElements" substitutionGroup="q8:Label" type="tns:SessionNameLabelType" />
+  <xs:complexType name="PlayerCountLabelType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q9="UnityEngine.UIElements" base="q9:LabelType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="PlayerCountLabel" xmlns:q10="UnityEngine.UIElements" substitutionGroup="q10:Label" type="tns:PlayerCountLabelType" />
+  <xs:complexType name="PlayerListViewElementType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q11="UnityEngine.UIElements" base="q11:ListViewType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="PlayerListViewElement" xmlns:q12="UnityEngine.UIElements" substitutionGroup="q12:ListView" type="tns:PlayerListViewElementType" />
+  <xs:complexType name="CopySessionCodeElementType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q13="UnityEngine.UIElements" base="q13:VisualElementType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="CopySessionCodeElement" xmlns:q14="UnityEngine.UIElements" substitutionGroup="q14:VisualElement" type="tns:CopySessionCodeElementType" />
+  <xs:complexType name="LeaveSessionButtonType">
+    <xs:complexContent mixed="false">
+      <xs:extension xmlns:q15="UnityEngine.UIElements" base="q15:ButtonType">
+        <xs:choice />
+        <xs:attribute name="session-type" type="xs:string" />
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="LeaveSessionButton" xmlns:q16="UnityEngine.UIElements" substitutionGroup="q16:Button" type="tns:LeaveSessionButtonType" />
+</xs:schema>

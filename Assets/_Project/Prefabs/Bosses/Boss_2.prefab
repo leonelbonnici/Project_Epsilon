@@ -45,16 +45,64 @@ PrefabInstance:
       value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
-      propertyPath: attacks.Array.data[4].weight
-      value: 2
+      propertyPath: attacks.Array.data[0].attack
+      value: 
+      objectReference: {fileID: 5267863300261477781}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[1].attack
+      value: 
+      objectReference: {fileID: 12034616493909290}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[2].attack
+      value: 
+      objectReference: {fileID: 7701815356889790215}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[2].weight
+      value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[3].attack
+      value: 
+      objectReference: {fileID: 8696624366036324300}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[3].weight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[4].attack
+      value: 
+      objectReference: {fileID: -4987536650177260328}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[4].weight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[5].attack
+      value: 
+      objectReference: {fileID: 6738750108800405573}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[5].weight
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[1].minPhase
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[2].minPhase
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[3].minPhase
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[4].minPhase
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      propertyPath: attacks.Array.data[5].minPhase
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3312338165476723331, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
       propertyPath: attacks.Array.data[2].eventName
@@ -144,8 +192,115 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss_2
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5263398420205642196, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+    - {fileID: 1240779446481567886, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+    - {fileID: 6327426721343261191, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      insertIndex: 6
+      addedObject: {fileID: 6738750108800405573}
+    - targetCorrespondingSourceObject: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      insertIndex: 7
+      addedObject: {fileID: -4987536650177260328}
+    - targetCorrespondingSourceObject: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+      insertIndex: 8
+      addedObject: {fileID: 8696624366036324300}
   m_SourcePrefab: {fileID: 100100000, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+--- !u!114 &12034616493909290 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 943560149540391680, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+  m_PrefabInstance: {fileID: 951090337444621866}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aca35adf87f78aa44bb5be3bc8ee36cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_LingeringHazard
+--- !u!114 &5267863300261477781 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4911674973805319103, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+  m_PrefabInstance: {fileID: 951090337444621866}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 344e134118c95af499479365b7b318b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_Hazard
+--- !u!1 &7470997076836206496 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7682195235354225034, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+  m_PrefabInstance: {fileID: 951090337444621866}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6738750108800405573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53210aebd17b8ce4fa590416b7c65b86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_SpreadShot
+  telegraphDuration: 0.5
+  telegraphStartedEvent: BOSS_TELEGRAPH
+  executedEvent: BOSS_EXECUTED
+  projectilePrefab: {fileID: 4190791474524625571, guid: ddab8e70b01dfd9478c0e692c93833f4, type: 3}
+  projectileSpeed: 8
+  projectileDamage: 15
+  spreadCount: 3
+  spreadAngle: 30
+--- !u!114 &-4987536650177260328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5c908bd658f5f5499cac87f74af0d05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_PullPlayers
+  telegraphDuration: 0.5
+  telegraphStartedEvent: BOSS_TELEGRAPH
+  executedEvent: BOSS_EXECUTED
+  pullDistance: 4
+  pullDuration: 0.35
+--- !u!114 &8696624366036324300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af36d2e86aa08b54a86332f563b459aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_BulletRing
+  telegraphDuration: 0.5
+  telegraphStartedEvent: BOSS_TELEGRAPH
+  executedEvent: BOSS_EXECUTED
+  projectilePrefab: {fileID: 4190791474524625571, guid: ddab8e70b01dfd9478c0e692c93833f4, type: 3}
+  projectileSpeed: 8
+  projectileDamage: 15
+  ringCount: 12
+  ringStartAngle: 0
+--- !u!114 &7701815356889790215 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7480667949584423213, guid: ad8528000600a954d92eab8129dbaa9a, type: 3}
+  m_PrefabInstance: {fileID: 951090337444621866}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7470997076836206496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9e69839a94c978468b10d748b6d12a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossAttack_Shoot

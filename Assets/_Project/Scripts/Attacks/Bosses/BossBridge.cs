@@ -2,6 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using HutongGames.PlayMaker;
 using Unity.Collections;
+using System.Collections.Generic;
 
 // Networking substrate for a boss: server-authoritative health + phase, a damage
 // entry point for player attacks, and PlayMaker events for presentation.
@@ -122,15 +123,44 @@ public float MaxHealthValue => effectiveMaxHealth.Value > 0f ? effectiveMaxHealt
     private void BroadcastEventRpc(FixedString64Bytes eventName)
         => SendEventToAllFsms(eventName.ToString());
         
-    [UnityEngine.Tooltip("Health fraction (0-1) at which the boss enters its second phase.")]
-    public float phase2HealthFraction = 0.5f;
+    [System.Serializable]
+    public class BossPhase
+    {
+        [UnityEngine.Tooltip("HP fraction at which the boss enters this phase. Phase 0 (first list entry) is entered on spawn — its value is ignored.")]
+        [Range(0f, 1f)]
+        public float enterAtHpFraction = 1f;
 
-    // The brain reads this each cycle — phase 2 is faster.
-    public float AttackCooldown => phase.Value >= 1 ? 1.0f : 2.0f;
+        [UnityEngine.Tooltip("Delay between attacks while in this phase. Lower = more aggressive.")]
+        public float attackCooldown = 2.0f;
+    }
+
+    [UnityEngine.Tooltip("Boss phases in order. List index = phase number. Entry 0 is the starting phase; subsequent entries define HP thresholds for auto-transitions. HP fractions should decrease down the list (e.g. 1, 0.66, 0.33 for 3 phases).")]
+    public List<BossPhase> phases = new List<BossPhase>() { new BossPhase() };
+
+    public float AttackCooldown
+    {
+        get
+        {
+            if (phases == null || phases.Count == 0) return 2f;
+            int p = Mathf.Clamp(phase.Value, 0, phases.Count - 1);
+            return phases[p].attackCooldown;
+        }
+    }
 
     private void CheckPhase()
     {
-        if (phase.Value == 0 && health.Value <= MaxHealthValue * phase2HealthFraction)
-            phase.Value = 1;
-    }          
+        if (!IsServer || phases == null || phases.Count == 0) return;
+
+        float hpFrac = MaxHealthValue > 0f ? health.Value / MaxHealthValue : 0f;
+
+        // Walk forward from the current phase. Advance as many phases as HP has crossed
+        // (handles massive single-hit damage that skips a phase).
+        int newPhase = phase.Value;
+        for (int next = newPhase + 1; next < phases.Count; next++)
+        {
+            if (hpFrac <= phases[next].enterAtHpFraction) newPhase = next;
+            else break;
+        }
+        if (newPhase != phase.Value) phase.Value = newPhase;
+    }         
 }
