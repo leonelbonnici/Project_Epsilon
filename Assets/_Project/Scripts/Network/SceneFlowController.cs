@@ -5,6 +5,9 @@ using UnityEngine.SceneManagement;
 
 public class SceneFlowController : MonoBehaviour
 {
+    public bool IsTransitioning => state != TransitionState.Idle;
+    public string CurrentGameplayScene => currentGameplayScene;
+
     public static SceneFlowController Instance { get; private set; }
     private bool sceneEventSubscribed = false;
 
@@ -68,7 +71,8 @@ public class SceneFlowController : MonoBehaviour
     private void OnServerStarted()
     {
         EnsureSceneEventSubscription();
-        ServerTransitionToScene(hubSceneName, "PlayerSpawn_HubArrival");
+        // Hub is no longer auto-loaded on server start.
+        // It's loaded by LobbyBridge.RequestStartGameRpc when the host presses Start Game.
     }
 
     private void OnClientStarted()
