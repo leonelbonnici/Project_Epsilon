@@ -58,11 +58,6 @@ public class ObjectivesHUD : MonoBehaviour
 
     private void PopulateEntry(GameObject entry, QuestDefinition def, QuestEntry runtime)
     {
-        // Expect the prefab to have:
-        //   - a top TMP_Text called "Title"
-        //   - a child transform called "ObjectivesRoot" (a vertical layout)
-        //   - an ObjectiveRow prefab (or we spawn TMP_Texts directly under ObjectivesRoot)
-
         var title = entry.transform.Find("Title")?.GetComponent<TMP_Text>();
         if (title != null) title.text = def.displayTitle;
 
@@ -74,20 +69,48 @@ public class ObjectivesHUD : MonoBehaviour
         for (int i = 0; i < def.objectives.Length; i++)
         {
             var obj = def.objectives[i];
+
+            // Prerequisite check — hide if any listed prerequisite isn't complete
+            if (obj.prerequisiteIndices != null && obj.prerequisiteIndices.Length > 0)
+            {
+                bool allPrereqsComplete = true;
+                foreach (int prereqIdx in obj.prerequisiteIndices)
+                {
+                    if (prereqIdx < 0 || prereqIdx >= def.objectives.Length) continue;
+                    var prereq = def.objectives[prereqIdx];
+                    int prereqRequired = prereq.requiredCount > 0 ? prereq.requiredCount : 1;
+                    if (runtime.GetProgress(prereqIdx) < prereqRequired)
+                    {
+                        allPrereqsComplete = false;
+                        break;
+                    }
+                }
+                if (!allPrereqsComplete) continue;
+            }
+
             int current = runtime.GetProgress(i);
             int required = obj.requiredCount > 0 ? obj.requiredCount : 1;
-
-            // Skip completed objectives per your "disappear when done" preference
-            if (current >= required) continue;
+            bool complete = current >= required;
 
             var line = new GameObject($"Objective_{i}");
             line.transform.SetParent(objRoot, false);
             var text = line.AddComponent<TextMeshProUGUI>();
             text.fontSize = 14;
-            text.color = Color.white;
-            text.text = obj.requiredCount > 0
+
+            string baseText = obj.requiredCount > 0
                 ? string.Format("· " + obj.displayText, current, required)
                 : "· " + obj.displayText;
+
+            if (complete)
+            {
+                text.text = $"<s>{baseText}</s>";
+                text.color = new Color(1f, 1f, 1f, 0.5f);
+            }
+            else
+            {
+                text.text = baseText;
+                text.color = Color.white;
+            }
         }
     }
 }

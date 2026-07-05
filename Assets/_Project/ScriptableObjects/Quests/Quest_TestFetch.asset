@@ -17,3 +17,7 @@ MonoBehaviour:
   objectives:
   - displayText: Pick up the test item ({0}/{1})
     requiredCount: 1
+    prerequisiteIndices: 
+  - displayText: Return to the NPC
+    requiredCount: 0
+    prerequisiteIndices: 00000000

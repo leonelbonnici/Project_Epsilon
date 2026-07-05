@@ -6,6 +6,15 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class PickupCollectible : NetworkBehaviour, IInteractable, IPersistable
 {
+    [UnityEngine.Tooltip("Inventory item ID granted when picked up. Leave empty if no item.")]
+    public string grantItemId = "";
+
+    [UnityEngine.Tooltip("Quest ID to advance an objective on when picked up. Leave empty if no quest.")]
+    public string advanceQuestId = "";
+
+    [UnityEngine.Tooltip("Which objective index to advance.")]
+    public int advanceObjectiveIndex = 0;
+
     // --- IPersistable ---
     public string PersistenceId => $"pickup:{pickupId}";
 
@@ -52,7 +61,7 @@ public class PickupCollectible : NetworkBehaviour, IInteractable, IPersistable
     public void ServerOnInteract(NetworkPlayMakerBridge interactor)
     {
         if (!IsServer) return;
-        if (isCollected.Value) return;       // already collected, ignore further interacts
+        if (isCollected.Value) return;
 
         if (scoreValue > 0)
         {
@@ -61,6 +70,19 @@ public class PickupCollectible : NetworkBehaviour, IInteractable, IPersistable
         }
 
         isCollected.Value = true;
+
+        // NEW: grant item to shared inventory
+        if (!string.IsNullOrEmpty(grantItemId) && SharedInventoryBridge.Instance != null)
+        {
+            SharedInventoryBridge.Instance.ServerAddItem(grantItemId, 1);
+        }
+
+        // NEW: advance a quest objective
+        if (!string.IsNullOrEmpty(advanceQuestId) && QuestJournalBridge.Instance != null)
+        {
+            QuestJournalBridge.Instance.ServerAdvanceObjective(advanceQuestId, advanceObjectiveIndex, 1);
+        }
+
         CollectedRaised?.Invoke(this);
     }
 

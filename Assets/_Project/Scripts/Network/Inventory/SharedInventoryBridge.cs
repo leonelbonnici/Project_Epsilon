@@ -20,6 +20,12 @@ public struct InventoryEntry : INetworkSerializable, System.IEquatable<Inventory
 
 public class SharedInventoryBridge : NetworkBehaviour, IPersistable
 {
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestAddItemRpc(string itemId, int count) => ServerAddItem(itemId, count);
+
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestRemoveItemRpc(string itemId, int count) => ServerRemoveItem(itemId, count);
+
     public static SharedInventoryBridge Instance { get; private set; }
 
     public NetworkList<InventoryEntry> Entries;

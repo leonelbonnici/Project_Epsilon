@@ -59,6 +59,20 @@ public struct QuestEntry : INetworkSerializable, System.IEquatable<QuestEntry>
 
 public class QuestJournalBridge : NetworkBehaviour, IPersistable
 {
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestStartQuestRpc(string questId) => ServerStartQuest(questId);
+
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestAdvanceObjectiveRpc(string questId, int objectiveIndex, int delta) 
+        => ServerAdvanceObjective(questId, objectiveIndex, delta);
+
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestCompleteObjectiveRpc(string questId, int objectiveIndex) 
+        => ServerCompleteObjective(questId, objectiveIndex);
+
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void RequestCompleteQuestRpc(string questId) => ServerCompleteQuest(questId);
+    
     public static QuestJournalBridge Instance { get; private set; }
 
     public NetworkList<QuestEntry> Quests;
