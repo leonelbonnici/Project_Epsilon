@@ -9,6 +9,7 @@ public class SceneFlowController : MonoBehaviour
     public string CurrentGameplayScene => currentGameplayScene;
 
     public static SceneFlowController Instance { get; private set; }
+    public event System.Action<string> SceneLoadCompleted;
     private bool sceneEventSubscribed = false;
 
     [UnityEngine.Tooltip("Name of the hub scene (must be in Build Settings).")]
@@ -178,6 +179,8 @@ public class SceneFlowController : MonoBehaviour
             {
                 AreaStateManager.Instance.RestoreArea(sceneEvent.SceneName);
             }
+
+            SceneLoadCompleted?.Invoke(sceneEvent.SceneName);
         }
 
         if (sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted)

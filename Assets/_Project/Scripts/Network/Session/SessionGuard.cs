@@ -2,10 +2,6 @@ using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 
-// Approval-time policy for accepting/rejecting incoming connections.
-// - Blocks joins beyond max party size.
-// - Blocks late joins during an active game.
-// - Allows reconnects only when the server is in a safe state (Hub, not transitioning).
 public class SessionGuard : MonoBehaviour
 {
     private void Start()
@@ -23,44 +19,47 @@ public class SessionGuard : MonoBehaviour
     private void Approve(NetworkManager.ConnectionApprovalRequest req, NetworkManager.ConnectionApprovalResponse res)
     {
         var lobby = LobbyBridge.Instance;
+        string incomingPlayerId = ExtractPayload(req);
+
+        // Bootstrap case: LobbyBridge not spawned yet. Only the host itself can connect.
         if (lobby == null)
         {
-            // Lobby not ready yet — approve the host (which triggers spawn of the LobbyBridge),
-            // reject anything else.
             bool isHost = req.ClientNetworkId == NetworkManager.Singleton.LocalClientId;
             res.Approved = isHost;
-            res.CreatePlayerObject = isHost;
-            if (!isHost) res.Reason = "Session not ready yet, try again.";
+            res.CreatePlayerObject = false;
+            if (!isHost)
+            {
+                res.Reason = "Session not ready yet, try again.";
+                return;
+            }
+            if (!string.IsNullOrEmpty(incomingPlayerId))
+            {
+                PendingPlayerIds.Stash(req.ClientNetworkId, incomingPlayerId);
+            }
             return;
         }
 
-        // Read the client-provided payload — used for reconnection matching.
-        // For Track A this is just a player name; later, swap for a stable playerId.
-        string incomingName = req.Payload != null && req.Payload.Length > 0
-            ? Encoding.UTF8.GetString(req.Payload)
-            : $"Player {req.ClientNetworkId}";
+        if (string.IsNullOrEmpty(incomingPlayerId))
+        {
+            res.Approved = false;
+            res.Reason = "Missing player identity.";
+            return;
+        }
 
         bool gameStarted = lobby.GameStarted.Value;
+        bool matchesReservedSlot = lobby.HasReservedSlotFor(incomingPlayerId);
         bool lobbyFull = lobby.Slots.Count >= lobby.maxPlayers;
-        bool isReconnect = gameStarted && lobby.HasDisconnectedSlotFor(incomingName);
 
         // Case A — Reconnecting player
-        if (isReconnect)
+        if (matchesReservedSlot)
         {
-            if (lobby.IsReconnectAllowedNow())
-            {
-                res.Approved = true;
-                res.CreatePlayerObject = false;
-            }
-            else
-            {
-                res.Approved = false;
-                res.Reason = "Session is in an active encounter — try again shortly.";
-            }
+            res.Approved = true;
+            res.CreatePlayerObject = false;
+            PendingPlayerIds.Stash(req.ClientNetworkId, incomingPlayerId);
             return;
         }
 
-        // Case B — New player, game already started
+        // Case B — Fresh player, game already started
         if (gameStarted)
         {
             res.Approved = false;
@@ -68,7 +67,7 @@ public class SessionGuard : MonoBehaviour
             return;
         }
 
-        // Case C — New player, lobby full
+        // Case C — Fresh player, lobby full
         if (lobbyFull)
         {
             res.Approved = false;
@@ -76,8 +75,15 @@ public class SessionGuard : MonoBehaviour
             return;
         }
 
-        // Case D — New player, lobby has room
+        // Case D — Fresh player, joining pre-game lobby
         res.Approved = true;
         res.CreatePlayerObject = false;
+        PendingPlayerIds.Stash(req.ClientNetworkId, incomingPlayerId);
+    }
+
+    private static string ExtractPayload(NetworkManager.ConnectionApprovalRequest req)
+    {
+        if (req.Payload == null || req.Payload.Length == 0) return "";
+        return Encoding.UTF8.GetString(req.Payload);
     }
 }

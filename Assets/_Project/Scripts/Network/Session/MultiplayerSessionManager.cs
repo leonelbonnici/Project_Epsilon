@@ -4,6 +4,8 @@ using Blocks.Sessions.Common;
 using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
+using Unity.Services.Authentication;
+using Unity.Netcode;
 
 // Thin wrapper around Unity's Multiplayer Services SDK. Replaces the Building Block's
 // UXML-based Quick Join UI with an API we call from our own uGUI MenuController.
@@ -26,6 +28,20 @@ public class MultiplayerSessionManager : MonoBehaviour
         Instance = this;
     }
 
+    private async void OnApplicationQuit()
+    {
+        if (GetCurrentSession() == null) return;   // nothing to leave
+        Debug.Log("[MultiplayerSessionManager] OnApplicationQuit — leaving session");
+        try
+        {
+            await LeaveSessionAsync();
+        }
+        catch (System.ObjectDisposedException)
+        {
+            // Already disposed by explicit Leave — fine.
+        }
+    }
+
     // --- Public API ---
 
     // Session code for the current session (empty if no session).
@@ -41,8 +57,19 @@ public class MultiplayerSessionManager : MonoBehaviour
     // True if we're currently in a session (either as host or client).
     public static bool InSession => GetCurrentSession() != null;
 
+    private static void StampConnectionPayload()
+    {
+        if (NetworkManager.Singleton == null) return;
+        if (AuthenticationService.Instance == null || !AuthenticationService.Instance.IsSignedIn) return;
+
+        string playerId = AuthenticationService.Instance.PlayerId ?? "";
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.UTF8.GetBytes(playerId);
+    }
+
     public static async Task<bool> CreateSessionAsync()
     {
+        StampConnectionPayload();
+
         if (!EnsureReady()) return false;
 
         try
@@ -62,6 +89,8 @@ public class MultiplayerSessionManager : MonoBehaviour
 
     public static async Task<bool> JoinSessionAsync(string code)
     {
+        StampConnectionPayload();
+        
         if (!EnsureReady()) return false;
         if (string.IsNullOrWhiteSpace(code)) { LastError = "Empty session code."; return false; }
 

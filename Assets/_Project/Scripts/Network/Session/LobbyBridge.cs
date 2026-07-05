@@ -1,32 +1,71 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections.Generic;
+using Unity.Services.Multiplayer;
+using System;
+
+public enum SlotState : byte
+{
+    InLobby = 0,
+    Playing = 1,
+    Disconnected = 2,
+    WaitingToJoin = 3
+}
+
+// Bridges SessionGuard's approval payload to LobbyBridge's OnClientConnected.
+// SessionGuard captures the incoming UGS PlayerId at approval; LobbyBridge reads
+// it moments later when the client is fully connected.
+public static class PendingPlayerIds
+{
+    private static readonly Dictionary<ulong, string> pending = new();
+
+    public static void Stash(ulong clientId, string playerId)
+    {
+        pending[clientId] = playerId;
+    }
+
+    public static string Consume(ulong clientId)
+    {
+        if (pending.TryGetValue(clientId, out var id))
+        {
+            pending.Remove(clientId);
+            return id;
+        }
+        return "";
+    }
+}
 
 // A slot in the lobby / party roster. Persists across a disconnect — if a player
 // leaves, their entry stays but 'connected' flips false; if they rejoin (same session),
 // the server matches them back to their slot instead of adding a new row.
 public struct PartySlot : INetworkSerializable, System.IEquatable<PartySlot>
 {
-    public ulong clientId;
+    public ulong clientId;                     // current connection ID (churns on reconnect)
+    public FixedString64Bytes playerId;         // UGS Auth PlayerId (stable across the session)
     public FixedString32Bytes name;
     public bool ready;
-    public bool connected;  // false while awaiting a reconnect
+    public SlotState state;
 
     public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
     {
         s.SerializeValue(ref clientId);
+        s.SerializeValue(ref playerId);
         s.SerializeValue(ref name);
         s.SerializeValue(ref ready);
-        s.SerializeValue(ref connected);
+        s.SerializeValue(ref state);
     }
 
-    // Slot identity is by name (persistent across ClientId churn on reconnect).
-    // If we later add a stable player identity (Unity Auth ID, Steam ID), swap that in.
-    public bool Equals(PartySlot other) => name.Equals(other.name);
+    // Identity is by UGS PlayerId (stable across reconnect).
+    public bool Equals(PartySlot other) => playerId.Equals(other.playerId);
 }
 
 public class LobbyBridge : NetworkBehaviour
 {
+    public NetworkVariable<FixedString64Bytes> CurrentSceneReplicated = 
+        new NetworkVariable<FixedString64Bytes>(
+            default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
     public static LobbyBridge Instance { get; private set; }
 
     [UnityEngine.Tooltip("Party roster. Slots persist across disconnects (connected=false while awaiting reconnect).")]
@@ -61,8 +100,47 @@ public class LobbyBridge : NetworkBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
 
-            // Add the host as the first slot.
-            AddOrReclaimSlot(NetworkManager.Singleton.LocalClientId, $"Player {NetworkManager.Singleton.LocalClientId}");
+            // Add the host as the first slot (their own OnClientConnected fires before
+            // this OnNetworkSpawn, so we can't rely on it — add inline).
+            ulong hostId = NetworkManager.Singleton.LocalClientId;
+            string hostPlayerId = PendingPlayerIds.Consume(hostId);
+            if (string.IsNullOrEmpty(hostPlayerId)) hostPlayerId = $"host-{hostId}";
+
+            Slots.Add(new PartySlot
+            {
+                clientId = hostId,
+                playerId = hostPlayerId,
+                name = $"Player {hostId}",
+                ready = false,
+                state = SlotState.InLobby
+            });
+
+            if (SceneFlowController.Instance != null)
+            {
+                SceneFlowController.Instance.SceneLoadCompleted += OnSceneLoadCompleted;
+            }
+        }
+    }
+
+    private void OnSceneLoadCompleted(string sceneName)
+    {
+        if (!IsServer) return;
+        
+        Debug.Log($"[Lobby] OnSceneLoadCompleted: sceneName={sceneName}, writing to CurrentSceneReplicated");
+
+        CurrentSceneReplicated.Value = sceneName;
+        if (sceneName != firstGameplayScene) return;   // only care about Hub arrivals
+
+        // Admit any waiting slots
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].state != SlotState.WaitingToJoin) continue;
+
+            var s = Slots[i];
+            s.state = SlotState.Playing;
+            Slots.RemoveAt(i);
+            Slots.Insert(i, s);
+            SpawnPlayerObject(s.clientId);
         }
     }
 
@@ -73,6 +151,16 @@ public class LobbyBridge : NetworkBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
         }
+        if (SceneFlowController.Instance != null)
+        {
+            SceneFlowController.Instance.SceneLoadCompleted -= OnSceneLoadCompleted;
+        }
+        if (Instance == this) Instance = null;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     // --- Server-side slot management ---
@@ -80,59 +168,140 @@ public class LobbyBridge : NetworkBehaviour
     private void OnClientConnected(ulong clientId)
     {
         if (!IsServer) return;
-        if (clientId == NetworkManager.Singleton.LocalClientId) return; // host already added
-        AddOrReclaimSlot(clientId, $"Player {clientId}");
+
+        // The host's own connection is added via OnNetworkSpawn, not here.
+        if (clientId == NetworkManager.Singleton.LocalClientId) return;
+
+        string playerId = GetPlayerIdForClient(clientId);
+        if (string.IsNullOrEmpty(playerId)) return;   // shouldn't happen — SessionGuard rejects payloadless
+
+        // Reconnect path
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].playerId.ToString() == playerId &&
+                (Slots[i].state == SlotState.Disconnected))
+            {
+                HandleReconnect(i, clientId);
+                return;
+            }
+        }
+
+        // Fresh join to pre-game lobby
+        if (GameStarted.Value) return;   // shouldn't happen — SessionGuard rejects
+        if (Slots.Count >= maxPlayers) return;
+
+        var slot = new PartySlot
+        {
+            clientId = clientId,
+            playerId = playerId,
+            name = $"Player {clientId}",
+            ready = false,
+            state = SlotState.InLobby
+        };
+        Slots.Add(slot);
     }
 
-    private void OnClientDisconnected(ulong clientId)
+    private async void OnClientDisconnected(ulong clientId)
     {
         if (!IsServer) return;
+
+        // Find the slot to get the UGS PlayerId
+        string playerIdToRemove = "";
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].clientId == clientId)
+            {
+                playerIdToRemove = Slots[i].playerId.ToString();
+                break;
+            }
+        }
+
+        // Ask UGS to remove this player from the session so they can rejoin later
+        if (!string.IsNullOrEmpty(playerIdToRemove))
+        {
+            await RemovePlayerFromUgsSession(playerIdToRemove);
+        }
+
+        // Now do the slot state update as before
         for (int i = 0; i < Slots.Count; i++)
         {
             if (Slots[i].clientId != clientId) continue;
 
+            var s = Slots[i];
             if (GameStarted.Value)
             {
-                // Game in progress: keep the slot, mark as disconnected — awaiting reconnect.
-                var s = Slots[i];
-                s.connected = false;
-                Slots[i] = s;
+                s.state = SlotState.Disconnected;
+                Slots.RemoveAt(i);
+                Slots.Insert(i, s);
+                Debug.Log($"[Lobby] Marked slot {i} (clientId {clientId}) as Disconnected");
             }
             else
             {
-                // Still in lobby: just remove the slot outright.
                 Slots.RemoveAt(i);
             }
             return;
         }
     }
 
-    private void AddOrReclaimSlot(ulong clientId, string defaultName)
+    private async System.Threading.Tasks.Task RemovePlayerFromUgsSession(string playerId)
     {
-        // Reconnection: look for an existing slot by name that's currently disconnected.
-        // NOTE: matching by name is a placeholder — swap to Unity Auth playerId later.
-        for (int i = 0; i < Slots.Count; i++)
+        try
         {
-            if (!Slots[i].connected && Slots[i].name.ToString() == defaultName)
+            var sessionSettings = MultiplayerSessionManager.Instance?.sessionSettings;
+            if (sessionSettings == null) return;
+
+            var session = Unity.Services.Multiplayer.MultiplayerService.Instance?.Sessions
+                .GetValueOrDefault(sessionSettings.sessionType);
+            if (session is Unity.Services.Multiplayer.IHostSession hostSession)
             {
-                var s = Slots[i];
-                s.clientId = clientId;      // new ClientId post-reconnect
-                s.connected = true;
-                s.ready = false;             // require re-ready after reconnect
-                Slots[i] = s;
-                return;
+                await hostSession.AsHost().RemovePlayerAsync(playerId);
+                Debug.Log($"[Lobby] Removed player {playerId} from UGS session (allows reconnect)");
             }
         }
-
-        // New player: add a fresh slot.
-        if (Slots.Count >= maxPlayers) return;
-        Slots.Add(new PartySlot
+        catch (Exception e)
         {
-            clientId = clientId,
-            name = defaultName,
-            ready = false,
-            connected = true
-        });
+            Debug.LogWarning($"[Lobby] Failed to remove player from UGS session: {e.Message}");
+        }
+    }
+
+    private void HandleReconnect(int slotIndex, ulong newClientId)
+    {
+        if (!IsServer) return;
+
+        var s = Slots[slotIndex];
+        s.clientId = newClientId;
+
+        bool inHub = IsPartyInHub();
+        Debug.Log($"[Lobby] HandleReconnect slotIndex={slotIndex} newClientId={newClientId} inHub={inHub} currentScene='{SceneFlowController.Instance?.CurrentGameplayScene}' isTransitioning={SceneFlowController.Instance?.IsTransitioning}");
+        if (inHub)
+        {
+            s.state = SlotState.Playing;
+            Slots.RemoveAt(slotIndex);
+            Slots.Insert(slotIndex, s);
+            SpawnPlayerObject(newClientId);
+        }
+        else
+        {
+            s.state = SlotState.WaitingToJoin;
+            Slots.RemoveAt(slotIndex);
+            Slots.Insert(slotIndex, s);
+            // No PlayerObject spawn. Waiting room UI on the client picks up the state.
+        }
+    }
+
+    private bool IsPartyInHub()
+    {
+        if (SceneFlowController.Instance == null) return false;
+        if (SceneFlowController.Instance.IsTransitioning) return false;
+        return SceneFlowController.Instance.CurrentGameplayScene == firstGameplayScene;
+    }
+
+    private string GetPlayerIdForClient(ulong clientId)
+    {
+        // In this NGO setup, the payload for the incoming client is captured by SessionGuard
+        // but not stored anywhere accessible per-client here. Simplest fix: SessionGuard also
+        // stashes the last-approved payload in a static dictionary that LobbyBridge reads.
+        return PendingPlayerIds.Consume(clientId);
     }
 
     // --- Client-driven RPCs ---
@@ -162,71 +331,68 @@ public class LobbyBridge : NetworkBehaviour
         if (GameStarted.Value) return;
         if (Slots.Count < minPlayersToStart) return;
         foreach (var s in Slots)
-            if (s.connected && !s.ready) return;
+            if (s.state == SlotState.InLobby && !s.ready) return;
 
         GameStarted.Value = true;
 
-        // Spawn a PlayerObject for every connected client before the scene transition.
-        SpawnAllPlayers();
+        // Flip all InLobby slots to Playing
+        for (int i = 0; i < Slots.Count; i++)
+        {
+            if (Slots[i].state != SlotState.InLobby) continue;
+            var s = Slots[i];
+            s.state = SlotState.Playing;
+            Slots.RemoveAt(i);
+            Slots.Insert(i, s);
+        }
 
-        if (SceneFlowController.Instance != null)
+        SpawnAllPlayers();
+        SceneFlowController.Instance.ServerTransitionToScene(firstGameplayScene, firstSpawnPoint);
+    }
+
+    private void SpawnPlayerObject(ulong clientId)
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null || nm.NetworkConfig.PlayerPrefab == null)
         {
-            SceneFlowController.Instance.ServerTransitionToScene(firstGameplayScene, firstSpawnPoint);
+            Debug.LogError("[LobbyBridge] Cannot spawn — NetworkManager or PlayerPrefab missing.");
+            return;
         }
-        else
-        {
-            Debug.LogError("[LobbyBridge] SceneFlowController not found; cannot transition to gameplay scene.");
-        }
+
+        // If they already have one (shouldn't happen), skip
+        if (nm.ConnectedClients.TryGetValue(clientId, out var client) && client.PlayerObject != null) return;
+
+        var instance = Instantiate(nm.NetworkConfig.PlayerPrefab);
+        var netObj = instance.GetComponent<NetworkObject>();
+        netObj.SpawnAsPlayerObject(clientId);
     }
 
     private void SpawnAllPlayers()
     {
         var nm = NetworkManager.Singleton;
-        if (nm == null || nm.NetworkConfig.PlayerPrefab == null)
-        {
-            Debug.LogError("[LobbyBridge] NetworkManager or PlayerPrefab missing; cannot spawn players.");
-            return;
-        }
-
+        if (nm == null) return;
         foreach (var client in nm.ConnectedClientsList)
         {
-            // Skip if this client already has a PlayerObject (shouldn't happen with CreatePlayerObject=false, but defensive).
-            if (client.PlayerObject != null) continue;
-
-            var playerInstance = Instantiate(nm.NetworkConfig.PlayerPrefab);
-            var netObj = playerInstance.GetComponent<NetworkObject>();
-            netObj.SpawnAsPlayerObject(client.ClientId);
+            SpawnPlayerObject(client.ClientId);
         }
+    }
+
+    public bool HasReservedSlotFor(string playerId)
+    {
+        if (!IsServer) return false;
+        if (string.IsNullOrEmpty(playerId)) return false;
+        foreach (var s in Slots)
+        {
+            Debug.Log($"[Lobby] HasReservedSlotFor checking: incoming='{playerId}' vs slot playerId='{s.playerId}' state={s.state}");
+            if (s.playerId.ToString() == playerId && s.state == SlotState.Disconnected) return true;
+        }
+        return false;
     }
 
     // --- Reconnection gate: server-only query used by SessionGuard ---
 
-    // Returns true if the current session state allows a reconnecting client to be admitted.
-    // Policy: reconnect allowed only when the party is back in the Hub, not mid-encounter or transition.
-    public bool IsReconnectAllowedNow()
-    {
-        if (!IsServer) return false;
-        if (SceneFlowController.Instance == null) return false;
-
-        // Refuse mid-transition
-        if (SceneFlowController.Instance.IsTransitioning) return false;
-
-        // Refuse if not in the Hub
-        if (SceneFlowController.Instance.CurrentGameplayScene != firstGameplayScene) return false;
-
-        return true;
-    }
-
-    // Returns true if 'name' matches a disconnected slot (i.e. this is a genuine reconnect).
-    public bool HasDisconnectedSlotFor(string name)
-    {
-        if (!IsServer) return false;
-        foreach (var s in Slots)
-            if (!s.connected && s.name.ToString() == name) return true;
-        return false;
-    }
-
     // --- Client-side helpers ---
+    public bool IsLocalPlayerHost() =>
+    NetworkManager.Singleton.LocalClientId == NetworkManager.ServerClientId;
 
     public bool IsLocalPlayerReady()
     {
@@ -237,22 +403,39 @@ public class LobbyBridge : NetworkBehaviour
         return false;
     }
 
-    public bool AllConnectedPlayersReady()
-    {
-        if (Slots == null || Slots.Count < minPlayersToStart) return false;
-        foreach (var s in Slots)
-            if (s.connected && !s.ready) return false;
-        return true;
-    }
-
-    public bool IsLocalPlayerHost() =>
-        NetworkManager.Singleton.LocalClientId == NetworkManager.ServerClientId;
-
     public int ConnectedCount()
     {
         int count = 0;
         if (Slots == null) return 0;
-        foreach (var s in Slots) if (s.connected) count++;
+        foreach (var s in Slots) if (s.state == SlotState.InLobby || s.state == SlotState.Playing) count++;
         return count;
+    }
+
+    public bool AllConnectedPlayersReady()
+    {
+        if (Slots == null || Slots.Count < minPlayersToStart) return false;
+        foreach (var s in Slots)
+            if (s.state == SlotState.InLobby && !s.ready) return false;
+        return true;
+    }
+
+    [Rpc(SendTo.Server, RequireOwnership = false)]
+    public void HostKickSlotRpc(int slotIndex, RpcParams rpcParams = default)
+    {
+        ulong senderId = rpcParams.Receive.SenderClientId;
+        if (senderId != NetworkManager.ServerClientId) return;   // host only
+        if (slotIndex < 0 || slotIndex >= Slots.Count) return;
+
+        var s = Slots[slotIndex];
+        // Only kick slots that aren't actively playing
+        if (s.state != SlotState.Disconnected && s.state != SlotState.WaitingToJoin) return;
+
+        // If they're WaitingToJoin, they're currently connected — disconnect them cleanly
+        if (s.state == SlotState.WaitingToJoin)
+        {
+            NetworkManager.Singleton.DisconnectClient(s.clientId, "Removed from party by host.");
+        }
+
+        Slots.RemoveAt(slotIndex);
     }
 }

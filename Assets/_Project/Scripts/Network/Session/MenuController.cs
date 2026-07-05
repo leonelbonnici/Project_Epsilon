@@ -5,6 +5,11 @@ using TMPro;
 
 public class MenuController : MonoBehaviour
 {
+    [Header("Waiting room widgets")]
+    public GameObject screenWaitingRoom;
+    public TMP_Text waitingRoomLabel;
+    public Button waitingRoomLeaveButton;   // still allow them to bail out
+
     [Header("Screens")]
     public GameObject screenMainMenu;
     public GameObject screenLobby;
@@ -34,6 +39,8 @@ public class MenuController : MonoBehaviour
         readyButton.onClick.AddListener(OnReadyToggled);
         startGameButton.onClick.AddListener(OnStartGameClicked);
         leaveButton.onClick.AddListener(OnLeaveClicked);
+        
+        waitingRoomLeaveButton.onClick.AddListener(OnLeaveClicked);
 
         ShowMainMenu();
     }
@@ -42,6 +49,7 @@ public class MenuController : MonoBehaviour
     {
         screenMainMenu.SetActive(true);
         screenLobby.SetActive(false);
+        if (screenWaitingRoom != null) screenWaitingRoom.SetActive(false);
     }
 
     private void ShowLobby()
@@ -87,17 +95,25 @@ public class MenuController : MonoBehaviour
     
     private async void OnLeaveClicked()
     {
+        Debug.Log("[MenuCtrl] OnLeaveClicked: starting Leave");
         await MultiplayerSessionManager.LeaveSessionAsync();
+        Debug.Log("[MenuCtrl] OnLeaveClicked: LeaveSessionAsync returned");
+        
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
+            Debug.Log("[MenuCtrl] OnLeaveClicked: calling Shutdown");
             NetworkManager.Singleton.Shutdown();
         }
+        
         ShowMainMenu();
+        
+        // Force Bootstrap reload to reset all in-scene NetworkObjects
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Bootstrap");
     }
 
     // --- Per-frame lobby state polling ---
 
-    private void Update()
+    private void UpdateLobbyView()
     {
         if (!screenLobby.activeSelf) return;
         if (LobbyBridge.Instance == null) return;
@@ -126,27 +142,155 @@ public class MenuController : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (LobbyBridge.Instance == null)
+        {
+            if (!wasBridgeNullLastFrame)
+            {
+                Debug.Log("[MenuCtrl] LobbyBridge.Instance is now null in Update");
+                lastLoggedState = null;  // reset so next state change re-logs
+            }
+            wasBridgeNullLastFrame = true;
+            return;
+        }
+
+        if (wasBridgeNullLastFrame)
+        {
+            Debug.Log("[MenuCtrl] LobbyBridge.Instance is now NON-null in Update");
+        }
+        wasBridgeNullLastFrame = false;
+
+        SlotState? myState = GetLocalSlotState();
+
+        if (myState != lastLoggedState)
+        {
+            Debug.Log($"[MenuCtrl] Update: myState changed from {lastLoggedState} to {myState}");
+            lastLoggedState = myState;
+        }
+
+        if (myState == SlotState.InLobby)
+        {
+            ShowLobby();
+            UpdateLobbyView();
+        }
+        else if (myState == SlotState.WaitingToJoin)
+        {
+            ShowWaitingRoom();
+            UpdateWaitingView();
+        }
+        else if (myState == SlotState.Playing)
+        {
+            screenMainMenu.SetActive(false);
+            screenLobby.SetActive(false);
+            screenWaitingRoom.SetActive(false);
+        }
+        else
+        {
+            if (screenLobby.activeSelf || screenWaitingRoom.activeSelf)
+            {
+                ShowMainMenu();
+            }
+        }
+    }
+
+    private bool wasBridgeNullLastFrame = false;
+    private SlotState? lastLoggedState = null;
+
+    private SlotState? GetLocalSlotState()
+    {
+        if (LobbyBridge.Instance == null) return null;
+        if (LobbyBridge.Instance.Slots == null) return null;
+        
+        try
+        {
+            ulong localId = NetworkManager.Singleton?.LocalClientId ?? 0;
+            foreach (var s in LobbyBridge.Instance.Slots)
+            {
+                if (s.clientId == localId) return s.state;
+            }
+        }
+        catch (System.ObjectDisposedException)
+        {
+            // NetworkList has been disposed (post-shutdown) — treat as no slot.
+            return null;
+        }
+        return null;
+    }
+
+    private void ShowWaitingRoom()
+    {
+        screenMainMenu.SetActive(false);
+        screenLobby.SetActive(false);
+        screenWaitingRoom.SetActive(true);
+    }
+
+    private void UpdateWaitingView()
+    {
+        string sceneName = "an unknown place";
+        if (LobbyBridge.Instance != null)
+        {
+            var replicated = LobbyBridge.Instance.CurrentSceneReplicated.Value;
+            var replicatedStr = replicated.ToString();
+            if (!string.IsNullOrEmpty(replicatedStr)) sceneName = replicatedStr;
+        }
+        waitingRoomLabel.text = $"The party is currently in {sceneName}.\nYou'll rejoin when they return to the Hub.";
+    }
+
+    private void UpdateWaitingLabel()
+    {
+        string sceneName = "an unknown place";
+        if (LobbyBridge.Instance != null)
+        {
+            var replicated = LobbyBridge.Instance.CurrentSceneReplicated.Value;
+            var replicatedStr = replicated.ToString();
+            Debug.Log($"[Lobby] UpdateWaitingLabel: replicated bytes length={replicated.Length}, ToString='{replicatedStr}'");
+            if (!string.IsNullOrEmpty(replicatedStr)) sceneName = replicatedStr;
+        }
+        waitingRoomLabel.text = $"The party is currently in {sceneName}.\nYou'll rejoin when they return to the Hub.";
+    }
+
     private void RebuildPlayerList()
     {
-        if (playerListRoot == null || playerRowPrefab == null) return;
-        if (LobbyBridge.Instance == null) return;
-
+        if (playerListRoot == null || playerRowPrefab == null || LobbyBridge.Instance == null) return;
         foreach (Transform c in playerListRoot) Destroy(c.gameObject);
 
-        foreach (var slot in LobbyBridge.Instance.Slots)
+        for (int i = 0; i < LobbyBridge.Instance.Slots.Count; i++)
         {
+            var slot = LobbyBridge.Instance.Slots[i];
             GameObject row = Instantiate(playerRowPrefab, playerListRoot);
-            var lbl = row.GetComponentInChildren<TMP_Text>();
+
+            var label = row.GetComponentInChildren<TMP_Text>();
             var toggle = row.GetComponentInChildren<Toggle>();
 
-            if (lbl != null)
+            string suffix = "";
+            if (slot.clientId == NetworkManager.ServerClientId) suffix += " (host)";
+            switch (slot.state)
             {
-                string suffix = "";
-                if (slot.clientId == NetworkManager.ServerClientId) suffix = " (host)";
-                if (!slot.connected) suffix += " (disconnected)";
-                lbl.text = $"{slot.name}{suffix}";
+                case SlotState.Disconnected: suffix += " [disconnected]"; break;
+                case SlotState.WaitingToJoin: suffix += " [waiting to join]"; break;
             }
+            if (label != null) label.text = $"{slot.name}{suffix}";
             if (toggle != null) toggle.isOn = slot.ready;
+
+            // Host kick button visibility — only for the host viewing non-Playing rows
+            if (LobbyBridge.Instance.IsLocalPlayerHost() &&
+                (slot.state == SlotState.Disconnected || slot.state == SlotState.WaitingToJoin))
+            {
+                AddKickButton(row, i);
+            }
         }
+    }
+
+    private void AddKickButton(GameObject row, int slotIndex)
+    {
+        // Assumes your PlayerRow.prefab has an optional "KickButton" child that's inactive by default.
+        // Or spawn one via prefab reference. Simplest: just show a small ✕ button on the row.
+        var kick = row.transform.Find("KickButton");
+        if (kick == null) return;
+        kick.gameObject.SetActive(true);
+        var btn = kick.GetComponent<Button>();
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() => LobbyBridge.Instance.HostKickSlotRpc(slotIndex));
     }
 }
