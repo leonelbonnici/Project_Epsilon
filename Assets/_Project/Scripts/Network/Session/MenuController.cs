@@ -31,6 +31,37 @@ public class MenuController : MonoBehaviour
     public TMP_Text startGameLabel;
     public Button leaveButton;
 
+
+    private bool isReturningToMenu = false;
+
+    private void Start()
+    {
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientStopped += HandleClientStopped;
+        else
+            Debug.LogWarning("[MenuCtrl] NetworkManager.Singleton null in Start; can't subscribe to OnClientStopped");
+    }
+
+    private void OnDestroy()
+    {
+        if (NetworkManager.Singleton != null)
+            NetworkManager.Singleton.OnClientStopped -= HandleClientStopped;
+    }
+
+    // Fires on the host when it stops, AND on every client when it gets disconnected.
+    private void HandleClientStopped(bool wasHost)
+    {
+        Debug.Log($"[MenuCtrl] OnClientStopped(wasHost={wasHost}) — returning to main menu");
+        ReturnToMainMenu();
+    }
+
+    private void ReturnToMainMenu()
+    {
+        if (isReturningToMenu) return;   // guard against a double reload
+        isReturningToMenu = true;
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Bootstrap");
+    }
+
     private void Awake()
     {
         hostButton.onClick.AddListener(OnHostClicked);
@@ -94,22 +125,22 @@ public class MenuController : MonoBehaviour
         LobbyBridge.Instance.RequestStartGameRpc();
     }
     
-    private async void OnLeaveClicked()
+    public async void OnLeaveClicked()
     {
         Debug.Log("[MenuCtrl] OnLeaveClicked: starting Leave");
         await MultiplayerSessionManager.LeaveSessionAsync();
         Debug.Log("[MenuCtrl] OnLeaveClicked: LeaveSessionAsync returned");
-        
+
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
         {
             Debug.Log("[MenuCtrl] OnLeaveClicked: calling Shutdown");
             NetworkManager.Singleton.Shutdown();
+            // OnClientStopped fires → ReturnToMainMenu → Bootstrap reload.
         }
-        
-        ShowMainMenu();
-        
-        // Force Bootstrap reload to reset all in-scene NetworkObjects
-        UnityEngine.SceneManagement.SceneManager.LoadScene("Bootstrap");
+        else
+        {
+            ReturnToMainMenu();   // already stopped; route manually
+        }
     }
 
     // --- Per-frame lobby state polling ---

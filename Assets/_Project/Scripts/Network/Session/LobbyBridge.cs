@@ -201,31 +201,20 @@ public class LobbyBridge : NetworkBehaviour
         Slots.Add(slot);
     }
 
-    private async void OnClientDisconnected(ulong clientId)
+    private void OnClientDisconnected(ulong clientId)
     {
-        if (!IsServer) return;
+        if (!IsServer || !IsSpawned) return;
 
-        // Find the slot to get the UGS PlayerId
+        // Do the authoritative slot mutation FIRST, synchronously, while we still
+        // definitely hold write authority. The old code awaited a UGS call before
+        // writing to Slots — during host teardown, authority vanished across that
+        // await, causing "Client is not allowed to write to this NetworkList".
         string playerIdToRemove = "";
         for (int i = 0; i < Slots.Count; i++)
         {
-            if (Slots[i].clientId == clientId)
-            {
-                playerIdToRemove = Slots[i].playerId.ToString();
-                break;
-            }
-        }
-
-        // Ask UGS to remove this player from the session so they can rejoin later
-        if (!string.IsNullOrEmpty(playerIdToRemove))
-        {
-            await RemovePlayerFromUgsSession(playerIdToRemove);
-        }
-
-        // Now do the slot state update as before
-        for (int i = 0; i < Slots.Count; i++)
-        {
             if (Slots[i].clientId != clientId) continue;
+
+            playerIdToRemove = Slots[i].playerId.ToString();
 
             var s = Slots[i];
             if (GameStarted.Value)
@@ -239,7 +228,15 @@ public class LobbyBridge : NetworkBehaviour
             {
                 Slots.RemoveAt(i);
             }
-            return;
+            break;
+        }
+
+        // THEN free their UGS session slot so they can rejoin later. Fire-and-forget:
+        // it's independent of the roster, has its own try/catch, and if we're mid-
+        // teardown any "lobby not found" it throws is swallowed there.
+        if (!string.IsNullOrEmpty(playerIdToRemove))
+        {
+            _ = RemovePlayerFromUgsSession(playerIdToRemove);
         }
     }
 

@@ -119,6 +119,12 @@ public class MultiplayerSessionManager : MonoBehaviour
             await s.LeaveAsync();
             Debug.Log("[MultiplayerSessionManager] Left session.");
         }
+        catch (SessionException e) when (e.Error == SessionError.SessionNotFound)
+        {
+            // Host already tore the session/lobby down; leaving something that's
+            // already gone. The leave we wanted has effectively happened.
+            Debug.Log("[MultiplayerSessionManager] Session already gone; nothing to leave.");
+        }
         catch (Exception e)
         {
             Debug.LogError($"[MultiplayerSessionManager] LeaveSession failed: {e.Message}");
