@@ -1,6 +1,7 @@
 using UnityEngine;
 using Rewired;
 using Unity.Netcode;
+using TMPro;
 
 public class PauseMenuController : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class PauseMenuController : MonoBehaviour
 
     [Header("Menu routing")]
     [SerializeField] private MenuController menuController;
+
+    [Header("Room code")]
+    [SerializeField] private TMP_Text roomCodeLabel;
 
     private RigidbodyConstraints2D savedConstraints;
     private bool hasSavedConstraints;
@@ -44,12 +48,21 @@ public class PauseMenuController : MonoBehaviour
 
     public void Open()
     {
-        // Only allow pausing once we're actually in-game (local player spawned).
         if (GetLocalPlayer() == null) return;
 
         isOpen = true;
         if (pauseMenuRoot != null) pauseMenuRoot.SetActive(true);
+
+        RefreshRoomCode();          // ← add this
+
         SetLocalPlayerPaused(true);
+    }
+
+    private void RefreshRoomCode()
+    {
+        if (roomCodeLabel == null) return;
+        string code = MultiplayerSessionManager.CurrentCode;
+        roomCodeLabel.text = string.IsNullOrEmpty(code) ? "Room: —" : $"Room: {code}";
     }
 
     public void Close()
