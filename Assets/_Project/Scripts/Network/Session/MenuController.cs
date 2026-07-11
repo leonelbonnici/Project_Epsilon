@@ -48,10 +48,20 @@ public class MenuController : MonoBehaviour
             NetworkManager.Singleton.OnClientStopped -= HandleClientStopped;
     }
 
-    // Fires on the host when it stops, AND on every client when it gets disconnected.
-    private void HandleClientStopped(bool wasHost)
+    private async void HandleClientStopped(bool wasHost)
     {
-        Debug.Log($"[MenuCtrl] OnClientStopped(wasHost={wasHost}) — returning to main menu");
+        // Capture the reason SYNCHRONOUSLY, before any await — NM state (and
+        // DisconnectReason) can be cleared once teardown/leave starts.
+        string reason = NetworkManager.Singleton != null
+            ? NetworkManager.Singleton.DisconnectReason
+            : "";
+
+        if (!string.IsNullOrEmpty(reason))
+            Debug.Log($"[MenuCtrl] Disconnected by server — reason: \"{reason}\"");
+        else
+            Debug.Log($"[MenuCtrl] OnClientStopped(wasHost={wasHost}) — no reason (local leave / host shutdown).");
+
+        await MultiplayerSessionManager.LeaveSessionAsync();
         ReturnToMainMenu();
     }
 

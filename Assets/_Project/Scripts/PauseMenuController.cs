@@ -2,6 +2,8 @@ using UnityEngine;
 using Rewired;
 using Unity.Netcode;
 using TMPro;
+using System.Collections.Generic;
+using Unity.Netcode;
 
 public class PauseMenuController : MonoBehaviour
 {
@@ -17,6 +19,10 @@ public class PauseMenuController : MonoBehaviour
 
     [Header("Room code")]
     [SerializeField] private TMP_Text roomCodeLabel;
+
+    [Header("Party panel")]
+    [SerializeField] private Transform partyListRoot;
+    [SerializeField] private GameObject playerRowPrefab;
 
     private RigidbodyConstraints2D savedConstraints;
     private bool hasSavedConstraints;
@@ -53,9 +59,70 @@ public class PauseMenuController : MonoBehaviour
         isOpen = true;
         if (pauseMenuRoot != null) pauseMenuRoot.SetActive(true);
 
-        RefreshRoomCode();          // ← add this
+        RefreshRoomCode();
+        RebuildPartyList();          // ← add this
 
         SetLocalPlayerPaused(true);
+
+        if (LobbyBridge.Instance != null && LobbyBridge.Instance.Slots != null)
+        LobbyBridge.Instance.Slots.OnListChanged += OnSlotsChangedWhilePaused;
+    }
+
+    private void RebuildPartyList()
+    {
+        if (partyListRoot == null || playerRowPrefab == null) return;
+        if (LobbyBridge.Instance == null) return;
+
+        // Clear old rows
+        foreach (Transform c in partyListRoot) Destroy(c.gameObject);
+
+        var bridge = LobbyBridge.Instance;
+        bool isHost = bridge.IsLocalPlayerHost();
+
+        for (int i = 0; i < bridge.Slots.Count; i++)
+        {
+            var slot = bridge.Slots[i];
+            GameObject row = Instantiate(playerRowPrefab, partyListRoot);
+
+            var label = row.GetComponentInChildren<TMP_Text>();
+            var toggle = row.GetComponentInChildren<UnityEngine.UI.Toggle>();
+
+            string suffix = "";
+            if (slot.clientId == NetworkManager.ServerClientId) suffix += " (host)";
+            switch (slot.state)
+            {
+                case SlotState.Disconnected:  suffix += " [disconnected]"; break;
+                case SlotState.WaitingToJoin: suffix += " [waiting to join]"; break;
+            }
+            if (label != null) label.text = $"{slot.name}{suffix}";
+
+            // The lobby prefab has a ready Toggle; mid-game it's just noise. Hide it.
+            if (toggle != null) toggle.gameObject.SetActive(false);
+
+            // Host-only kick button, on every slot EXCEPT the host's own row.
+            bool canKick = isHost && slot.clientId != NetworkManager.ServerClientId;
+            SetupKickButton(row, i, canKick);
+        }
+    }
+
+    private void SetupKickButton(GameObject row, int slotIndex, bool canKick)
+    {
+        // GetComponentInChildren is recursive (Transform.Find is NOT — it only
+        // checks direct children, which is why the nested kick button was missed).
+        // The row has exactly one Button (the kick 'x'), so this finds it safely.
+        var btn = row.GetComponentInChildren<UnityEngine.UI.Button>(true);
+        if (btn == null) return;
+
+        btn.gameObject.SetActive(canKick);
+        if (!canKick) return;
+
+        btn.onClick.RemoveAllListeners();
+        btn.onClick.AddListener(() =>
+        {
+            if (LobbyBridge.Instance != null)
+                LobbyBridge.Instance.HostKickSlotRpc(slotIndex);
+            Invoke(nameof(RebuildPartyList), 0.15f);
+        });
     }
 
     private void RefreshRoomCode()
@@ -69,7 +136,16 @@ public class PauseMenuController : MonoBehaviour
     {
         isOpen = false;
         if (pauseMenuRoot != null) pauseMenuRoot.SetActive(false);
+
+        if (LobbyBridge.Instance != null && LobbyBridge.Instance.Slots != null)
+            LobbyBridge.Instance.Slots.OnListChanged -= OnSlotsChangedWhilePaused;
+
         SetLocalPlayerPaused(false);
+    }
+
+    private void OnSlotsChangedWhilePaused(NetworkListEvent<PartySlot> _)
+    {
+        if (isOpen) RebuildPartyList();
     }
 
     private void SetLocalPlayerPaused(bool paused)

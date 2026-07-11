@@ -62,6 +62,8 @@ public struct PartySlot : INetworkSerializable, System.IEquatable<PartySlot>
 
 public class LobbyBridge : NetworkBehaviour
 {
+    private readonly HashSet<ulong> kickedClientIds = new();
+
     public NetworkVariable<FixedString64Bytes> CurrentSceneReplicated = 
         new NetworkVariable<FixedString64Bytes>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -204,6 +206,9 @@ public class LobbyBridge : NetworkBehaviour
     private void OnClientDisconnected(ulong clientId)
     {
         if (!IsServer || !IsSpawned) return;
+
+        // If this disconnect was a host kick, the RPC already removed the slot.
+        if (kickedClientIds.Remove(clientId)) return;
 
         // Do the authoritative slot mutation FIRST, synchronously, while we still
         // definitely hold write authority. The old code awaited a UGS call before
@@ -424,15 +429,18 @@ public class LobbyBridge : NetworkBehaviour
         if (slotIndex < 0 || slotIndex >= Slots.Count) return;
 
         var s = Slots[slotIndex];
-        // Only kick slots that aren't actively playing
-        if (s.state != SlotState.Disconnected && s.state != SlotState.WaitingToJoin) return;
 
-        // If they're WaitingToJoin, they're currently connected — disconnect them cleanly
-        if (s.state == SlotState.WaitingToJoin)
+        // Never kick the host themselves.
+        if (s.clientId == NetworkManager.ServerClientId) return;
+
+        // Disconnect any currently-connected client (WaitingToJoin OR Playing).
+        // Disconnected slots have no live connection to drop.
+        if (s.state == SlotState.WaitingToJoin || s.state == SlotState.Playing)
         {
             NetworkManager.Singleton.DisconnectClient(s.clientId, "Removed from party by host.");
         }
 
+        // Kick = gone for good. Remove the slot so it isn't held for reconnect.
         Slots.RemoveAt(slotIndex);
     }
 }

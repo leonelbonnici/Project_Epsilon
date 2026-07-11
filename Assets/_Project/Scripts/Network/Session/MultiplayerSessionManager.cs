@@ -6,6 +6,7 @@ using Unity.Services.Multiplayer;
 using UnityEngine;
 using Unity.Services.Authentication;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 
 // Thin wrapper around Unity's Multiplayer Services SDK. Replaces the Building Block's
 // UXML-based Quick Join UI with an API we call from our own uGUI MenuController.
@@ -42,6 +43,37 @@ public class MultiplayerSessionManager : MonoBehaviour
         }
     }
 
+    private static async Task EnsureNetworkManagerStopped()
+    {
+        var nm = NetworkManager.Singleton;
+        if (nm == null) return;
+
+        if (nm.IsListening || nm.IsClient || nm.IsServer || nm.ShutdownInProgress)
+        {
+            if (!nm.ShutdownInProgress) nm.Shutdown();
+
+            int guard = 0;
+            while ((nm.IsListening || nm.ShutdownInProgress) && guard < 40)
+            {
+                await Task.Delay(50);
+                guard++;
+            }
+        }
+
+        // Even when the NM reports fully stopped, an ABRUPT disconnect (host kick)
+        // can leave the UnityTransport's underlying socket/driver half-torn. That
+        // stale socket survives the DontDestroyOnLoad Bootstrap reload and collides
+        // with the new connection on rejoin -> "[Wire] header part of a frame could
+        // not be read" -> StartClient returns false. Forcibly reset the transport
+        // so the next Start builds a clean driver.
+        var transport = nm.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        if (transport != null)
+        {
+            transport.Shutdown();          // disposes the NetworkDriver / closes the socket
+            await Task.Delay(100);         // let the OS-level socket close settle
+        }
+    }
+
     // --- Public API ---
 
     // Session code for the current session (empty if no session).
@@ -68,6 +100,7 @@ public class MultiplayerSessionManager : MonoBehaviour
 
     public static async Task<bool> CreateSessionAsync()
     {
+        await EnsureNetworkManagerStopped();
         StampConnectionPayload();
 
         if (!EnsureReady()) return false;
@@ -89,6 +122,10 @@ public class MultiplayerSessionManager : MonoBehaviour
 
     public static async Task<bool> JoinSessionAsync(string code)
     {
+        await EnsureNetworkManagerStopped();
+
+        var _nm = NetworkManager.Singleton;
+
         StampConnectionPayload();
         
         if (!EnsureReady()) return false;
@@ -102,11 +139,28 @@ public class MultiplayerSessionManager : MonoBehaviour
             return true;
         }
         catch (Exception e)
-        {
-            LastError = e.Message;
-            Debug.LogError($"[MultiplayerSessionManager] JoinSession failed: {e.Message}");
-            return false;
-        }
+                {
+                    // The host's SessionGuard denial surfaces as a GENERIC exception
+                    // ("Failed to start the network manager") — the real reason is NOT in
+                    // the exception message, it's in NetworkManager.DisconnectReason (which
+                    // the client just logged: "…session locked."). So classify by that,
+                    // not by the exception text.
+                    string reason = NetworkManager.Singleton != null
+                        ? NetworkManager.Singleton.DisconnectReason
+                        : "";
+
+                    if (!string.IsNullOrEmpty(reason))
+                    {
+                        LastError = reason;
+                        Debug.Log($"[MultiplayerSessionManager] Join refused by host (expected): {reason}");
+                    }
+                    else
+                    {
+                        LastError = e.Message;
+                        Debug.LogError($"[MultiplayerSessionManager] JoinSession failed: {e.Message}");
+                    }
+                    return false;
+                }
     }
 
     public static async Task LeaveSessionAsync()
